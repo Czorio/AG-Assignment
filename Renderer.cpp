@@ -46,7 +46,7 @@ void Renderer::renderFrame()
 			else
 			{
 				// Background if no hit
-				buffer[i] = 0x0000AA;
+				buffer[i] = 0x000033;
 			}
 		}
 	}

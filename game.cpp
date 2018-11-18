@@ -7,27 +7,30 @@ Renderer *renderer;
 // -----------------------------------------------------------
 void Game::Init()
 {
-	Camera cam = Camera( vec3( 0, 0, -1 ), vec3( 0, 0, 1 ), 1.0 );
+	int noPrims = 25;
+	int noLights = 3;
 
-	vector<Primitive *> prims = vector<Primitive *>( 10 );
-	vector<Light *> lights = vector<Light *>( 3 );
+	Camera cam = Camera( vec3( 2.5, 2.5, -10 ), vec3( 0, 0, 1 ), 1.0 );
+
+	vector<Primitive *> prims = vector<Primitive *>( noPrims );
+	vector<Light *> lights = vector<Light *>( noLights );
 
 	Material mat;
-	for ( unsigned i = 0; i < 10; i++ )
+	for ( unsigned i = 0; i < noPrims; i++ )
 	{
-		float spec = float( ( rand() % 255 ) / 255 );
+		float spec = float( ( rand() % 255 ) / 255.f );
 
 		mat.color = rand() % 0xFFFFFF;
 		mat.spec = spec;
 		prims[i] = new Sphere( vec3( rand() % 5, rand() % 5, rand() % 5 ), rand() % 3, mat );
 	}
 
-	for ( unsigned i = 0; i < 3; i++ )
+	for ( unsigned i = 0; i < noLights; i++ )
 	{
 		Light *l = new Light();
-		float r = float( ( rand() % 255 ) / 255 );
-		float g = float( ( rand() % 255 ) / 255 );
-		float b = float( ( rand() % 255 ) / 255 );
+		float r = float( ( rand() % 255 ) / 255.f );
+		float g = float( ( rand() % 255 ) / 255.f );
+		float b = float( ( rand() % 255 ) / 255.f );
 		l->color = vec3( r, g, b );
 		l->intensity = 2.5f;
 		l->origin = vec3( rand() % 2, rand() % 2, rand() % 2 );
@@ -60,9 +63,12 @@ void Game::Tick( float deltaTime )
 	timer t = timer();
 	renderer->renderFrame();
 	float elapsed = t.elapsed();
+	cout << 1 / (elapsed / 1000) << endl;
 
 	// Display
 	screen->SetBuffer( renderer->getOutput() );
-	string fps = "FPS: " + int( 1 / elapsed );
+	string fps = "FPS: " + int( 1 / elapsed ) + string("\n");
 	screen->Print( fps.c_str(), 2, 2, 0xFFFFFF );
+
+	printf( fps.c_str() );
 }
