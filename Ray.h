@@ -1,7 +1,14 @@
 #pragma once
-class Ray
+struct Hit
 {
-  public:
+	bool isHit;
+	vec3 coordinates;
+	vec3 normal;
+	Material mat;
+};
+
+struct Ray
+{
 	vec3 origin;
 	vec3 direction;
 

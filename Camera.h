@@ -1,10 +1,13 @@
 #pragma once
-struct Camera
+class Camera
 {
+  public:
 	vec3 origin;
 	vec3 direction;
 	vec3 screenCenter;
 	vec3 p0, p1, p2;
+
+	Camera() : origin( vec3() ), direction( vec3() ), screenCenter( vec3() ), p0( vec3() ), p1( vec3() ), p2( vec3() ) {}
 
 	Camera( vec3 origin, vec3 direction, float fov ) : origin( origin ), direction( direction )
 	{
@@ -20,13 +23,15 @@ struct Camera
 		r.origin = origin;
 
 		// Convert screenspace to UV
-		float u = x / SCRWIDTH;
-		float v = y / SCRHEIGHT;
+		float u = float(x) / SCRWIDTH;
+		float v = float(y) / SCRHEIGHT;
 
 		vec3 direction = ( P( u, v ) - origin );
 		float length = direction.length();
 		direction *= 1 / length;
+		r.direction = direction;
 
+		return r;
 	}
 
   private:

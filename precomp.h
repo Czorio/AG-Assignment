@@ -64,13 +64,15 @@ using namespace std;
 
 #include "surface.h"
 #include "template.h"
-#include "Ray.h"
-#include "Light.h"
-#include "Material.h"
-#include "Primitive.h"
-#include "Camera.h"
 
 using namespace Tmpl8;
+
+#include "Material.h"
+#include "Light.h"
+#include "Ray.h"
+#include "Camera.h"
+#include "Primitive.h"
+#include "Renderer.h"
 
 #include "game.h"
 // clang-format on
