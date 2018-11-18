@@ -2,6 +2,7 @@
 
 Renderer::Renderer()
 {
+	buffer = new Pixel[SCRWIDTH * SCRHEIGHT];
 }
 
 Renderer::~Renderer()
@@ -16,7 +17,7 @@ Renderer::~Renderer()
 		delete lights[i];
 	}
 
-	buffer = new Pixel[SCRWIDTH * SCRHEIGHT];
+	delete[] buffer;
 }
 
 void Renderer::renderFrame()
@@ -34,13 +35,18 @@ void Renderer::renderFrame()
 	Hit h;
 	for ( unsigned i = 0; i < SCRWIDTH * SCRHEIGHT; i++ )
 	{
-		for (Primitive *p : primitives)
+		for ( Primitive *p : primitives )
 		{
 			h = p->hit( rays[i] );
-			
+
 			if ( h.isHit )
 			{
 				buffer[i] = h.mat.color;
+			}
+			else
+			{
+				// Background if no hit
+				buffer[i] = 0x0000AA;
 			}
 		}
 	}
