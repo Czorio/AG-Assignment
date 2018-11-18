@@ -1,0 +1,37 @@
+#pragma once
+struct Camera
+{
+	vec3 origin;
+	vec3 direction;
+	vec3 screenCenter;
+	vec3 p0, p1, p2;
+
+	Camera( vec3 origin, vec3 direction, float fov ) : origin( origin ), direction( direction )
+	{
+		screenCenter = origin + fov * direction;
+		p0 = screenCenter + vec3( -1, -1, 0 );
+		p1 = screenCenter + vec3( 1, -1, 0 );
+		p2 = screenCenter + vec3( -1, 1, 0 );
+	}
+
+	Ray getRay( unsigned x, unsigned y )
+	{
+		Ray r;
+		r.origin = origin;
+
+		// Convert screenspace to UV
+		float u = x / SCRWIDTH;
+		float v = y / SCRHEIGHT;
+
+		vec3 direction = ( P( u, v ) - origin );
+		float length = direction.length();
+		direction *= 1 / length;
+
+	}
+
+  private:
+	vec3 P( float u, float v )
+	{
+		return p0 + u * ( p1 - p0 ) + v * ( p2 - p0 );
+	}
+};
