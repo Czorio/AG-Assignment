@@ -3,7 +3,7 @@
 struct Light
 {
 	vec3 origin;
-	vec3 color;
+	Pixel color;
 	float intensity;
 };
 

@@ -1,7 +1,8 @@
 #include "precomp.h"
 
-Renderer::Renderer()
+Renderer::Renderer( unsigned maxDepth )
 {
+	this->maxDepth = maxDepth;
 	buffer = new Pixel[SCRWIDTH * SCRHEIGHT];
 }
 
@@ -22,32 +23,11 @@ Renderer::~Renderer()
 
 void Renderer::renderFrame()
 {
-	vector<Ray> rays = vector<Ray>( SCRWIDTH * SCRHEIGHT );
-
 	for ( unsigned y = 0; y < SCRHEIGHT; y++ )
 	{
 		for ( unsigned x = 0; x < SCRWIDTH; x++ )
 		{
-			rays[y * SCRWIDTH + x] = cam.getRay( x, y );
-		}
-	}
-
-	Hit h;
-	for ( unsigned i = 0; i < SCRWIDTH * SCRHEIGHT; i++ )
-	{
-		for ( Primitive *p : primitives )
-		{
-			h = p->hit( rays[i] );
-
-			if ( h.isHit )
-			{
-				buffer[i] = h.mat.color;
-			}
-			else
-			{
-				// Background if no hit
-				buffer[i] = 0x000033;
-			}
+			buffer[y * SCRWIDTH + x] = shootRay( x, y, maxDepth );
 		}
 	}
 }
@@ -67,7 +47,30 @@ void Renderer::setCamera( Camera cam )
 	this->cam = cam;
 }
 
+Camera *Renderer::getCamera()
+{
+	return &cam;
+}
+
 Pixel *Renderer::getOutput()
 {
 	return buffer;
+}
+
+Pixel Renderer::shootRay( unsigned x, unsigned y, unsigned depth )
+{
+	Ray r = cam.getRay( x, y );
+	Hit h;
+	Pixel pix = 0x000000;
+
+	for ( Primitive *p : primitives )
+	{
+		h = p->hit( r );
+		if ( h.isHit )
+		{
+			pix = h.mat.color;
+		}
+	}
+
+	return pix;
 }
