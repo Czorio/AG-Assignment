@@ -2,31 +2,13 @@
 
 Renderer *renderer;
 
-// rgb to Pixel
-Pixel rgb( float r, float g, float b )
-{
-	clamp( r, 0.f, 1.f );
-	clamp( g, 0.f, 1.f );
-	clamp( b, 0.f, 1.f );
-
-	Pixel pix = 0x000000;
-
-	unsigned char cr = r * 255;
-	unsigned char cg = g * 255;
-	unsigned char cb = b * 255;
-
-	pix = ( (int)cr << 16 ) | ( (int)cg << 8 ) | ( (int)cb );
-
-	return pix;
-}
-
 // -----------------------------------------------------------
 // Initialize the application
 // -----------------------------------------------------------
 void Game::Init()
 {
-	int noPrims = 25;
-	int noLights = 3;
+	unsigned noPrims = 25;
+	unsigned noLights = 10;
 
 	Camera cam = Camera( vec3( 5.f, 5.f, -10.f ), vec3( 0.f, 0.f, 1.f ), 1.f );
 
@@ -42,16 +24,9 @@ void Game::Init()
 		float r = Rand( 1.f );
 		float g = Rand( 1.f );
 		float b = Rand( 1.f );
-		mat.color = rgb( r, g, b );
+		mat.color = vec3( r, g, b );
 		mat.spec = spec;
 		prims[i] = new Sphere( origin, radius, mat );
-
-		printf( "Sphere %d\n", i );
-		printf( "\tpos: (%f; %f; %f)\n", origin.x, origin.y, origin.z );
-		printf( "\trad: %f\n", radius );
-		printf( "\trgb: (%f, %f, %f)\n", r, g, b );
-		printf( "\tmat.color: %x\n", mat.color );
-		printf( "\tmat.spec: %f\n", mat.spec );
 	}
 
 	for ( unsigned i = 0; i < noLights; i++ )
@@ -61,7 +36,7 @@ void Game::Init()
 		float g = Rand( 1.f );
 		float b = Rand( 1.f );
 
-		l->color = rgb( r, g, b );
+		l->color = vec3( r, g, b );
 		l->intensity = 2.5f;
 		l->origin = vec3( Rand( 5.f ), Rand( 5.f ), Rand( 5.f ) );
 		lights[i] = l;

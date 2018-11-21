@@ -17,7 +17,7 @@ class Camera
 		p2 = screenCenter + vec3( -1, 1, 0 );
 	}
 
-	Ray getRay( unsigned x, unsigned y )
+	Ray getRay( unsigned x, unsigned y ) const
 	{
 		Ray r;
 		r.origin = origin;
@@ -35,7 +35,7 @@ class Camera
 	}
 
   private:
-	vec3 P( float u, float v )
+	vec3 P( float u, float v ) const
 	{
 		return p0 + u * ( p1 - p0 ) + v * ( p2 - p0 );
 	}

@@ -2,7 +2,7 @@
 class Renderer
 {
   public:
-	Renderer(unsigned maxDepth);
+	Renderer( unsigned maxDepth );
 	~Renderer();
 
 	void renderFrame();
@@ -23,5 +23,10 @@ class Renderer
 	vector<Light *> lights;
 	Pixel *buffer;
 
-	Pixel shootRay(unsigned x, unsigned y, unsigned depth);
+	Pixel shootRay( unsigned x, unsigned y, unsigned depth ) const;
+	Pixel shootRay( const Ray &r, unsigned depth ) const;
+	float shadowRay( const Hit &h, const Light *l ) const;
+
+	// rgb to Pixel
+	Pixel rgb( float r, float g, float b ) const;
 };

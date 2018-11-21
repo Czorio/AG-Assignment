@@ -2,7 +2,7 @@
 
 struct Material
 {
-	Pixel color;
+	vec3 color;
 	float spec;
 };
 
