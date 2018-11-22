@@ -1,4 +1,5 @@
 #pragma once
+// Renderer class
 class Renderer
 {
   public:
