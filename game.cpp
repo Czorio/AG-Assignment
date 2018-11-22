@@ -7,8 +7,8 @@ Renderer *renderer;
 // -----------------------------------------------------------
 void Game::Init()
 {
-	unsigned noPrims = 25;
-	unsigned noLights = 10;
+	unsigned noPrims = 26;
+	unsigned noLights = 1;
 
 	Camera cam = Camera( vec3( 5.f, 5.f, -10.f ), vec3( 0.f, 0.f, 1.f ), 1.f );
 
@@ -16,7 +16,12 @@ void Game::Init()
 	vector<Light *> lights = vector<Light *>( noLights );
 
 	Material mat;
-	for ( unsigned i = 0; i < noPrims; i++ )
+	mat.color = vec3( 0.75f, 0.75f, 0.75f );
+	mat.spec = 0.f;
+	prims[0] = new Sphere( vec3( 0.f, -100.f, 0.f ), 100, mat );
+
+	// Generate random spheres
+	for ( unsigned i = 1; i < noPrims; i++ )
 	{
 		float spec = Rand( 1.f );
 		float radius = Rand( 1.f );
@@ -29,18 +34,14 @@ void Game::Init()
 		prims[i] = new Sphere( origin, radius, mat );
 	}
 
-	for ( unsigned i = 0; i < noLights; i++ )
-	{
-		Light *l = new Light();
-		float r = Rand( 1.f );
-		float g = Rand( 1.f );
-		float b = Rand( 1.f );
+	// Create "sun"
+	Light *l = new Light();
+	l->type = LightType::DIRECTIONAL_LIGHT;
+	l->color = vec3( 1.f, 1.f, 1.f );
+	l->direction = vec3( 0.f, -1.f, 0.f );
+	l->origin = vec3();
 
-		l->color = vec3( r, g, b );
-		l->intensity = 2.5f;
-		l->origin = vec3( Rand( 5.f ), Rand( 5.f ), Rand( 5.f ) );
-		lights[i] = l;
-	}
+	lights[0] = l;
 
 	renderer = new Renderer( 50 );
 	renderer->setCamera( cam );

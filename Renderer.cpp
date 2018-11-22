@@ -27,7 +27,7 @@ void Renderer::renderFrame()
 	{
 		for ( unsigned x = 0; x < SCRWIDTH; x++ )
 		{
-			buffer[y * SCRWIDTH + x] = shootRay( x, y, maxDepth );
+			buffer[y * SCRWIDTH + x] = rgb( shootRay( x, y, maxDepth ) );
 		}
 	}
 }
@@ -57,13 +57,13 @@ Pixel *Renderer::getOutput()
 	return buffer;
 }
 
-Pixel Renderer::shootRay( unsigned x, unsigned y, unsigned depth ) const
+vec3 Renderer::shootRay( unsigned x, unsigned y, unsigned depth ) const
 {
 	Ray r = cam.getRay( x, y );
 	return shootRay( r, depth );
 }
 
-Pixel Renderer::shootRay( const Ray &r, unsigned depth ) const
+vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 {
 	Hit closestHit;
 	closestHit.t = FLT_MAX;
@@ -90,48 +90,51 @@ Pixel Renderer::shootRay( const Ray &r, unsigned depth ) const
 		return rgb( 0.f, 0.f, 0.f );
 	}
 
-/*	float intensity = 0.f;
+	vec3 lightIntensity = vec3();
 
 	for ( Light *l : lights )
 	{
-		intensity += shadowRay( closestHit, l );
+		lightIntensity += shadowRay( closestHit, l );
 	}
-*/
-	vec3 color = closestHit.mat.color;
-	//color *= intensity;
-	//printf("(%f; %f; %f) * %f\n", color.x, color.y, color.z, intensity);
 
+	vec3 color = closestHit.mat.color * lightIntensity;
 
-	Pixel pix = rgb( color.x, color.y, color.z );
-
-	return pix;
+	return color;
 }
 
-float Renderer::shadowRay( const Hit &h, const Light *l ) const
+vec3 Renderer::shadowRay( const Hit &h, const Light *l ) const
 {
 	Ray shadowRay;
-	shadowRay.origin = h.coordinates;
+	// Shadow bias
+	shadowRay.origin = h.coordinates + ( 0.0004f * h.normal );
 	float dist;
+	vec3 dir;
 
-	vec3 dir = l->origin - h.coordinates;
-	dist = dir.length();
-	dir.normalize();
-	shadowRay.direction = dir;
-
-	// check for obstructions
-	for ( Primitive *p : primitives )
+	if ( l->type == LightType::DIRECTIONAL_LIGHT )
 	{
-		Hit shdw = p->hit( shadowRay );
-		if ( shdw.isHit && dist > shdw.t )
-		{
-			return 0.f;
-		}
+		dist = FLT_MAX;
+		dir = -1 * l->direction;
+	}
+	else if ( l->type == LightType::POINT_LIGHT )
+	{
+		dir = l->origin - h.coordinates;
+		dist = dir.length();
+		dir.normalize();
 	}
 
-	float angle = abs(h.normal.dot( dir ));
+	shadowRay.direction = dir;
 
-	// No hits, return intensity at distance
-	return l->intensity * angle * ( 1 / ( dist * dist ) );
+	// TODO: Cast ray from hit to light
+
+	float dot = h.normal.dot( dir );
+	if ( dot > 0 )
+	{
+		return l->color * dot;
+	}
+	else
+	{
+		return vec3();
+	}
 }
 
 Pixel Renderer::rgb( float r, float g, float b ) const
@@ -149,4 +152,9 @@ Pixel Renderer::rgb( float r, float g, float b ) const
 	pix = ( (int)cr << 16 ) | ( (int)cg << 8 ) | ( (int)cb );
 
 	return pix;
+}
+
+Pixel Renderer::rgb( vec3 vec ) const
+{
+	return rgb( vec.x, vec.y, vec.z );
 }
