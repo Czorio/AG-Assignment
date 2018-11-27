@@ -38,7 +38,7 @@ void Game::Init()
 	Light *l = new Light();
 	l->type = LightType::DIRECTIONAL_LIGHT;
 	l->color = vec3( 1.f, 1.f, 1.f );
-	l->direction = vec3( 0.f, -1.f, 0.f );
+	l->direction = vec3( 0.f, 1.f, 0.f );
 	l->origin = vec3();
 
 	lights[0] = l;

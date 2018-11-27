@@ -9,6 +9,8 @@
 
 #define SCRWIDTH 800
 #define SCRHEIGHT 800
+
+#define TILESIZE 8
 // #define FULLSCREEN
 // #define ADVANCEDGL	// faster if your system supports it
 
@@ -42,6 +44,8 @@
 #include <memory>
 #include <random>
 #include <string>
+#include <thread>
+#include <tuple>
 #include <vector>
 
 // Namespaced C headers:

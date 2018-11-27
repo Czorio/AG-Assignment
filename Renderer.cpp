@@ -2,8 +2,19 @@
 
 Renderer::Renderer( unsigned maxDepth )
 {
+	threads = vector<thread>( thread::hardware_concurrency() );
+
 	this->maxDepth = maxDepth;
 	buffer = new Pixel[SCRWIDTH * SCRHEIGHT];
+
+	for ( unsigned y = 0; y < SCRHEIGHT; y += TILESIZE )
+	{
+		for ( unsigned x = 0; x < SCRWIDTH; x += TILESIZE )
+		{
+			tuple<int, int> element = make_pair( x, y );
+			tiles.push_back( element );
+		}
+	}
 }
 
 Renderer::~Renderer()
@@ -23,11 +34,19 @@ Renderer::~Renderer()
 
 void Renderer::renderFrame()
 {
-	for ( unsigned y = 0; y < SCRHEIGHT; y++ )
+#pragma omp parallel for
+	for ( int i = 0; i < tiles.size(); i++ )
 	{
-		for ( unsigned x = 0; x < SCRWIDTH; x++ )
+		int x = get<0>( tiles[i] );
+		int y = get<1>( tiles[i] );
+
+		for ( unsigned dy = 0; dy < TILESIZE; dy++ )
 		{
-			buffer[y * SCRWIDTH + x] = rgb( shootRay( x, y, maxDepth ) );
+			for ( unsigned dx = 0; dx < TILESIZE; dx++ )
+			{
+				vec3 color = shootRay( x + dx, y + dy, maxDepth );
+				buffer[( y + dy ) * SCRWIDTH + ( x + dx )] = rgb( color );
+			}
 		}
 	}
 }
