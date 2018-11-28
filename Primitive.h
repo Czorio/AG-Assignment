@@ -39,6 +39,11 @@ struct Sphere : public Primitive
 
 		t -= sqrt( r2 - p2 );
 
+		if ( t < 0 )
+		{
+			return h;
+		}
+
 		h.isHit = true;
 		h.t = t;
 		h.coordinates = r( t );

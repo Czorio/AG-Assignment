@@ -19,7 +19,7 @@ class Renderer
 	unsigned maxDepth;
 
 	vector<thread> threads;
-	vector<tuple<int, int>> tiles; // <x_min, x_max>, <y_min, y_max>
+	vector<tuple<int, int>> tiles;
 
 	Camera cam;
 	vector<Primitive *> primitives;

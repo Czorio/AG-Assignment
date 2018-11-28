@@ -18,7 +18,7 @@ void Game::Init()
 	Material mat;
 	mat.color = vec3( 0.75f, 0.75f, 0.75f );
 	mat.spec = 0.f;
-	prims[0] = new Sphere( vec3( 0.f, -100.f, 0.f ), 100, mat );
+	prims[0] = new Sphere( vec3( 0.f, 1050.f, 0.f ), 1000, mat );
 
 	// Generate random spheres
 	for ( unsigned i = 1; i < noPrims; i++ )
