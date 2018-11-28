@@ -1,10 +1,9 @@
 #include "precomp.h"
 
-Renderer::Renderer( unsigned maxDepth )
+Renderer::Renderer()
 {
 	threads = vector<thread>( thread::hardware_concurrency() );
 
-	this->maxDepth = maxDepth;
 	buffer = new Pixel[SCRWIDTH * SCRHEIGHT];
 
 	for ( unsigned y = 0; y < SCRHEIGHT; y += TILESIZE )
@@ -44,8 +43,11 @@ void Renderer::renderFrame()
 		{
 			for ( unsigned dx = 0; dx < TILESIZE; dx++ )
 			{
-				vec3 color = shootRay( x + dx, y + dy, maxDepth );
-				buffer[( y + dy ) * SCRWIDTH + ( x + dx )] = rgb( color );
+				if ( ( x + dx ) < SCRWIDTH && ( y + dy ) < SCRHEIGHT )
+				{
+					vec3 color = shootRay( x + dx, y + dy, MAXDEPTH );
+					buffer[( y + dy ) * SCRWIDTH + ( x + dx )] = rgb( color );
+				}
 			}
 		}
 	}
@@ -111,12 +113,30 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 
 	vec3 lightIntensity = vec3();
 
+	// Shadows
 	for ( Light *l : lights )
 	{
 		lightIntensity += shadowRay( closestHit, l );
 	}
 
 	vec3 color = closestHit.mat.color * lightIntensity;
+
+	// Reflection
+	if ( depth > 0 )
+	{
+		vec3 specular;
+		color *= 1.f - closestHit.mat.spec;
+
+		vec3 reflDir = r.direction - 2.f * r.direction.dot( closestHit.normal ) * closestHit.normal;
+		Ray refl;
+		refl.origin = closestHit.coordinates + ( 0.0004f * closestHit.normal );
+		refl.direction = reflDir;
+
+		specular = shootRay( refl, depth - 1 );
+
+		specular *= closestHit.mat.spec;
+		color += specular;
+	}
 
 	return color;
 }
@@ -143,7 +163,13 @@ vec3 Renderer::shadowRay( const Hit &h, const Light *l ) const
 
 	shadowRay.direction = dir;
 
-	// TODO: Cast ray from hit to light
+	for ( Primitive *prim : primitives )
+	{
+		if ( prim->hit( shadowRay ).isHit )
+		{
+			return vec3();
+		}
+	}
 
 	float dot = h.normal.dot( dir );
 	if ( dot > 0 )

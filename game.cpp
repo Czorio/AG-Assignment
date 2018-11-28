@@ -10,7 +10,7 @@ void Game::Init()
 	unsigned noPrims = 26;
 	unsigned noLights = 1;
 
-	Camera cam = Camera( vec3( 5.f, 5.f, -10.f ), vec3( 0.f, 0.f, 1.f ), 1.f );
+	Camera cam = Camera( vec3( 0.f, 0.f, -30.f ), vec3( 0.f, 0.f, 1.f ), 1.f );
 
 	vector<Primitive *> prims = vector<Primitive *>( noPrims );
 	vector<Light *> lights = vector<Light *>( noLights );
@@ -18,14 +18,14 @@ void Game::Init()
 	Material mat;
 	mat.color = vec3( 0.75f, 0.75f, 0.75f );
 	mat.spec = 0.f;
-	prims[0] = new Sphere( vec3( 0.f, 1050.f, 0.f ), 1000, mat );
+	prims[0] = new Sphere( vec3( 0.f, 10010.f, 0.f ), 10000, mat );
 
 	// Generate random spheres
 	for ( unsigned i = 1; i < noPrims; i++ )
 	{
 		float spec = Rand( 1.f );
-		float radius = Rand( 1.f );
-		vec3 origin = vec3( Rand( 10.f ), Rand( 10.f ), Rand( 10.f ) );
+		float radius = 0.5f + Rand( 1.5f );
+		vec3 origin = vec3( -12.5f + Rand( 25.f ), -12.5f + Rand( 25.f ), -12.5f + Rand( 25.f ) );
 		float r = Rand( 1.f );
 		float g = Rand( 1.f );
 		float b = Rand( 1.f );
@@ -43,7 +43,7 @@ void Game::Init()
 
 	lights[0] = l;
 
-	renderer = new Renderer( 50 );
+	renderer = new Renderer();
 	renderer->setCamera( cam );
 	renderer->setLights( lights );
 	renderer->setPrimitives( prims );

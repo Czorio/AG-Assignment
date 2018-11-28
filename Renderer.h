@@ -2,7 +2,7 @@
 class Renderer
 {
   public:
-	Renderer( unsigned maxDepth );
+	Renderer();
 	~Renderer();
 
 	void renderFrame();
@@ -16,8 +16,6 @@ class Renderer
 	Pixel *getOutput();
 
   private:
-	unsigned maxDepth;
-
 	vector<thread> threads;
 	vector<tuple<int, int>> tiles;
 
