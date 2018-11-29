@@ -27,31 +27,96 @@ struct Sphere : public Primitive
 	{
 		Hit h;
 		h.hitType = 0;
-		vec3 C = origin - r.origin;
-		float t = dot( C, r.direction );
-		vec3 Q = C - t * r.direction;
-		float p2 = dot( Q, Q );
 
-		if ( p2 > r2 )
-		{
-			return h; // r2 = r * r
-		}
+		float a = r.direction.dot( r.direction );
+		float b = ( 2.f * r.direction ).dot( r.origin - origin );
+		float c = ( r.origin - origin ).dot( r.origin - origin ) - r2;
 
-		t -= sqrt( r2 - p2 );
+		float d = ( b * b ) - ( 4 * a * c );
+		float t;
 
-		if ( t < 0 )
+		if ( d < 0 ) // No hits
 		{
 			return h;
 		}
+		else if ( d == 0 ) // One hit
+		{
+			// Square root of d is 0, we can leave it out
+			t = ( -1 * b ) / ( 2 * a );
 
-		h.hitType = 1;
-		h.t = t;
-		h.coordinates = r( t );
-		h.mat = mat;
+			if ( t < 0 )
+			{
+				return h;
+			}
 
-		vec3 normal = h.coordinates - origin;
-		normal.normalize();
-		h.normal = normal;
-		return h;
+			h.t = t;
+			h.coordinates = r( t );
+			h.mat = mat;
+
+			vec3 normal = h.coordinates - origin;
+			normal.normalize();
+			h.normal = normal;
+
+			float dot = normal.dot( r.direction );
+
+			if ( dot > 0 ) // inside out
+			{
+				h.hitType = -1;
+			}
+			else if ( dot < 0 ) // outside in
+			{
+				h.hitType = 1;
+			}
+
+			return h;
+		}
+		else // Two hits
+		{
+			float t1 = ( ( -1 * b ) - sqrt( d ) ) / ( 2 * a ); // Should be lowest possible t; closest t
+			float t2 = ( ( -1 * b ) + sqrt( d ) ) / ( 2 * a ); // Should be highest possible t; furthest t
+
+			if ( t1 > 0 )
+			{
+				// Outside in
+				h.hitType = 1;
+				h.t = t1;
+				h.coordinates = r( t1 );
+				
+				h.mat = mat;
+
+				vec3 normal = h.coordinates - origin;
+				normal.normalize();
+				h.normal = normal;
+
+				return h;
+			}
+			else if (t1 < 0 && t2 > 0)
+			{
+				// This situation happens when you start from within the sphere
+				h.hitType = -1;
+				h.t = t2;
+
+				h.coordinates = r( t2 );
+				h.mat = mat;
+
+				vec3 normal = h.coordinates - origin;
+				normal.normalize();
+				h.normal = normal;
+
+				return h;
+			}
+			else if (t1 < 0 && t2 < 0)
+			{
+				// No hits 
+				return h;
+			}
+			else
+			{
+				// Some weird situation that I didn't account for
+				return h;
+			}
+
+
+		}
 	}
 };

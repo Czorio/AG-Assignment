@@ -29,6 +29,7 @@ Renderer::~Renderer()
 	}
 
 	delete[] buffer;
+	buffer = nullptr;
 }
 
 void Renderer::renderFrame()
@@ -111,7 +112,7 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 		return rgb( 0.f, 0.f, 0.f );
 	}
 
-	vec3 lightIntensity = vec3(AMBIENTLIGHT, AMBIENTLIGHT, AMBIENTLIGHT);
+	vec3 lightIntensity = vec3( AMBIENTLIGHT, AMBIENTLIGHT, AMBIENTLIGHT );
 
 	// Shadows
 	for ( Light *l : lights )
@@ -119,23 +120,29 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 		lightIntensity += shadowRay( closestHit, l );
 	}
 
-	vec3 color = closestHit.mat.color * lightIntensity;
+	vec3 color;
 
-	// Reflection
-	if ( depth > 0 )
+	if ( depth > 0 && closestHit.mat.type == MaterialType::DIFFUSE_MAT)
 	{
-		vec3 specular;
-		color *= 1.f - closestHit.mat.spec;
-
+		color = closestHit.mat.color * lightIntensity;
+	}
+	// Reflection
+	else if ( depth > 0 && closestHit.mat.type == MaterialType::MIRROR_MAT )
+	{
 		vec3 reflDir = r.direction - 2.f * r.direction.dot( closestHit.normal ) * closestHit.normal;
 		Ray refl;
 		refl.origin = closestHit.coordinates + ( REFLECTIONBIAS * closestHit.normal );
 		refl.direction = reflDir;
 
-		specular = shootRay( refl, depth - 1 );
-
+		vec3 specular = shootRay( refl, depth - 1 );
+		color = (closestHit.mat.color * lightIntensity) * (1.f - closestHit.mat.spec);
 		specular *= closestHit.mat.spec;
 		color += specular;
+	}
+	// Refraction
+	else if ( depth > 0 && closestHit.mat.type == MaterialType::GLASS_MAT )
+	{
+		// TODO: refraction
 	}
 
 	return color;
