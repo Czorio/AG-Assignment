@@ -19,7 +19,7 @@ void Game::Init()
 	Material mat;
 	mat.color = vec3( 0.75f, 0.75f, 0.75f );
 	mat.spec = 0.25f;
-	prims[0] = new Sphere( vec3( 0.f, 1000010.f, 0.f ), 1000000.f, mat );
+	prims[0] = new Sphere( vec3( 0.f, 1010.f, 0.f ), 1000.f, mat );
 
 	// Glass Sphere
 	GlassMaterial glassMat;
@@ -95,6 +95,11 @@ void Game::Tick( float deltaTime )
 	{
 		screen->Print( "W - Move forward\nS - Move back\nA - Move left\nD - Move right\nSpace - Move up\nLeft Ctrl - Move down", 2, 10, 0xFFFFFF );
 	}
+}
+
+void Tmpl8::Game::MouseMove( int x, int y )
+{
+	// TODO: Rotation
 }
 
 void Tmpl8::Game::KeyDown( int key )
