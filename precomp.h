@@ -7,8 +7,16 @@
 // Prevent expansion clashes (when using std::min and std::max):
 #define NOMINMAX
 
-#define SCRWIDTH 800
-#define SCRHEIGHT 800
+#define SCRWIDTH 512
+#define SCRHEIGHT 512
+#define TILESIZE 8
+
+#define MAXDEPTH 16
+#define	SAMPLES 1
+
+#define SHADOWBIAS 0.0004f
+#define REFLECTIONBIAS 0.0004f
+
 // #define FULLSCREEN
 // #define ADVANCEDGL	// faster if your system supports it
 
@@ -42,6 +50,8 @@
 #include <memory>
 #include <random>
 #include <string>
+#include <thread>
+#include <tuple>
 #include <vector>
 
 // Namespaced C headers:
