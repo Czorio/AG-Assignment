@@ -1,7 +1,7 @@
 #pragma once
 struct Hit
 {
-	int hitType;
+	int hitType;// -1 hit from inside; 0 no hit; 1 hit
 	float t;
 	vec3 coordinates;
 	vec3 normal;

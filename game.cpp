@@ -10,7 +10,7 @@ void Game::Init()
 	unsigned noPrims = 27;
 	unsigned noLights = 1;
 
-	Camera cam = Camera( vec3( 0.f, 0.f, -30.f ), vec3( 0.f, 0.f, 1.f ), 1.f, (SCRWIDTH / SCRHEIGHT) );
+	Camera cam = Camera( vec3( 0.f, 0.f, -30.f ), vec3( 0.f, 0.f, 1.f ), 1.f, ((float)SCRWIDTH / (float)SCRHEIGHT) );
 
 	vector<Primitive *> prims = vector<Primitive *>( noPrims );
 	vector<Light *> lights = vector<Light *>( noLights );
@@ -68,6 +68,8 @@ void Game::Shutdown()
 	delete renderer;
 }
 
+bool showHelp = false;
+
 // -----------------------------------------------------------
 // Main application tick function
 // -----------------------------------------------------------
@@ -85,6 +87,14 @@ void Game::Tick( float deltaTime )
 	// Display
 	screen->SetBuffer( renderer->getOutput() );
 	screen->Print( ( "FPS: " + to_string( fps ) ).c_str(), 2, 2, 0xFFFFFF );
+	if ( !showHelp )
+	{
+		screen->Print( "Press \"h\" for controls", 2, 8, 0xFFFFFF );
+	}
+	else
+	{
+		screen->Print( "W - Move forward\nS - Move back\nA - Move left\nD - Move right\nSpace - Move up\nLeft Ctrl - Move down", 2, 10, 0xFFFFFF );
+	}
 }
 
 void Tmpl8::Game::KeyDown( int key )
@@ -92,10 +102,10 @@ void Tmpl8::Game::KeyDown( int key )
 	switch ( key )
 	{
 	case SDL_SCANCODE_D:
-		renderer->getCamera()->move( vec3( -0.1f, 0.f, 0.f ) );
+		renderer->getCamera()->move( vec3( 0.1f, 0.f, 0.f ) );
 		break;
 	case SDL_SCANCODE_A:
-		renderer->getCamera()->move( vec3( 0.1f, 0.f, 0.f ) );
+		renderer->getCamera()->move( vec3( -0.1f, 0.f, 0.f ) );
 		break;
 	case SDL_SCANCODE_W:
 		renderer->getCamera()->move( vec3( 0.f, 0.f, 0.1f ) );
@@ -109,6 +119,8 @@ void Tmpl8::Game::KeyDown( int key )
 	case SDL_SCANCODE_LCTRL:
 		renderer->getCamera()->move( vec3( 0.f, 0.1f, 0.f ) );
 		break;
+	case SDL_SCANCODE_H:
+		showHelp = !showHelp;
 	default:
 		break;
 	}

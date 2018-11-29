@@ -11,10 +11,11 @@ class Camera
 
 	Camera( vec3 origin, vec3 direction, float fov, float aspect ) : origin( origin ), direction( direction )
 	{
+		printf( "Aspect Ratio: %f", aspect );
 		screenCenter = origin + fov * direction;
-		p0 = screenCenter + vec3( -1, -1, 0 );
-		p1 = screenCenter + vec3( 1, -1, 0 );
-		p2 = screenCenter + vec3( -1, 1, 0 );
+		p0 = screenCenter + vec3( -1 * aspect, -1, 0 );
+		p1 = screenCenter + vec3( 1 * aspect, -1, 0 );
+		p2 = screenCenter + vec3( -1 * aspect, 1, 0 );
 	}
 
 	Ray getRay( unsigned x, unsigned y ) const
