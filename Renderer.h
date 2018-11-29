@@ -2,7 +2,7 @@
 class Renderer
 {
   public:
-	Renderer( unsigned maxDepth );
+	Renderer();
 	~Renderer();
 
 	void renderFrame();
@@ -16,17 +16,19 @@ class Renderer
 	Pixel *getOutput();
 
   private:
-	unsigned maxDepth;
+	vector<thread> threads;
+	vector<tuple<int, int>> tiles;
 
 	Camera cam;
 	vector<Primitive *> primitives;
 	vector<Light *> lights;
 	Pixel *buffer;
 
-	Pixel shootRay( unsigned x, unsigned y, unsigned depth ) const;
-	Pixel shootRay( const Ray &r, unsigned depth ) const;
-	float shadowRay( const Hit &h, const Light *l ) const;
+	vec3 shootRay( unsigned x, unsigned y, unsigned depth ) const;
+	vec3 shootRay( const Ray &r, unsigned depth ) const;
+	vec3 shadowRay( const Hit &h, const Light *l ) const;
 
 	// rgb to Pixel
 	Pixel rgb( float r, float g, float b ) const;
+	Pixel rgb( vec3 vec ) const;
 };

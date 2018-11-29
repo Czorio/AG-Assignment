@@ -1,9 +1,19 @@
 #include "precomp.h"
 
-Renderer::Renderer( unsigned maxDepth )
+Renderer::Renderer()
 {
-	this->maxDepth = maxDepth;
+	threads = vector<thread>( thread::hardware_concurrency() );
+
 	buffer = new Pixel[SCRWIDTH * SCRHEIGHT];
+
+	for ( unsigned y = 0; y < SCRHEIGHT; y += TILESIZE )
+	{
+		for ( unsigned x = 0; x < SCRWIDTH; x += TILESIZE )
+		{
+			tuple<int, int> element = make_pair( x, y );
+			tiles.push_back( element );
+		}
+	}
 }
 
 Renderer::~Renderer()
@@ -23,11 +33,22 @@ Renderer::~Renderer()
 
 void Renderer::renderFrame()
 {
-	for ( unsigned y = 0; y < SCRHEIGHT; y++ )
+#pragma omp parallel for
+	for ( int i = 0; i < tiles.size(); i++ )
 	{
-		for ( unsigned x = 0; x < SCRWIDTH; x++ )
+		int x = get<0>( tiles[i] );
+		int y = get<1>( tiles[i] );
+
+		for ( unsigned dy = 0; dy < TILESIZE; dy++ )
 		{
-			buffer[y * SCRWIDTH + x] = shootRay( x, y, maxDepth );
+			for ( unsigned dx = 0; dx < TILESIZE; dx++ )
+			{
+				if ( ( x + dx ) < SCRWIDTH && ( y + dy ) < SCRHEIGHT )
+				{
+					vec3 color = shootRay( x + dx, y + dy, MAXDEPTH );
+					buffer[( y + dy ) * SCRWIDTH + ( x + dx )] = rgb( color );
+				}
+			}
 		}
 	}
 }
@@ -57,13 +78,13 @@ Pixel *Renderer::getOutput()
 	return buffer;
 }
 
-Pixel Renderer::shootRay( unsigned x, unsigned y, unsigned depth ) const
+vec3 Renderer::shootRay( unsigned x, unsigned y, unsigned depth ) const
 {
 	Ray r = cam.getRay( x, y );
 	return shootRay( r, depth );
 }
 
-Pixel Renderer::shootRay( const Ray &r, unsigned depth ) const
+vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 {
 	Hit closestHit;
 	closestHit.t = FLT_MAX;
@@ -75,7 +96,7 @@ Pixel Renderer::shootRay( const Ray &r, unsigned depth ) const
 	for ( Primitive *p : primitives )
 	{
 		Hit tmp = p->hit( r );
-		if ( tmp.isHit )
+		if ( tmp.hitType != 0 )
 		{
 			if ( tmp.t < closestHit.t )
 			{
@@ -90,48 +111,78 @@ Pixel Renderer::shootRay( const Ray &r, unsigned depth ) const
 		return rgb( 0.f, 0.f, 0.f );
 	}
 
-/*	float intensity = 0.f;
+	vec3 lightIntensity = vec3();
 
+	// Shadows
 	for ( Light *l : lights )
 	{
-		intensity += shadowRay( closestHit, l );
+		lightIntensity += shadowRay( closestHit, l );
 	}
-*/
-	vec3 color = closestHit.mat.color;
-	//color *= intensity;
-	//printf("(%f; %f; %f) * %f\n", color.x, color.y, color.z, intensity);
 
+	vec3 color = closestHit.mat.color * lightIntensity;
 
-	Pixel pix = rgb( color.x, color.y, color.z );
+	// Reflection
+	if ( depth > 0 )
+	{
+		vec3 specular;
+		color *= 1.f - closestHit.mat.spec;
 
-	return pix;
+		vec3 reflDir = r.direction - 2.f * r.direction.dot( closestHit.normal ) * closestHit.normal;
+		Ray refl;
+		refl.origin = closestHit.coordinates + ( REFLECTIONBIAS * closestHit.normal );
+		refl.direction = reflDir;
+
+		specular = shootRay( refl, depth - 1 );
+
+		specular *= closestHit.mat.spec;
+		color += specular;
+	}
+
+	return color;
 }
 
-float Renderer::shadowRay( const Hit &h, const Light *l ) const
+vec3 Renderer::shadowRay( const Hit &h, const Light *l ) const
 {
 	Ray shadowRay;
-	shadowRay.origin = h.coordinates;
+	// Shadow bias
+	shadowRay.origin = h.coordinates + ( SHADOWBIAS * h.normal );
 	float dist;
+	float inverseSquare;
+	vec3 dir;
 
-	vec3 dir = l->origin - h.coordinates;
-	dist = dir.length();
-	dir.normalize();
+	if ( l->type == LightType::DIRECTIONAL_LIGHT )
+	{
+		dist = FLT_MAX;
+		dir = -1 * l->direction;
+		inverseSquare = 1.f;
+	}
+	else if ( l->type == LightType::POINT_LIGHT )
+	{
+		dir = l->origin - h.coordinates;
+		dist = dir.length();
+		dir.normalize();
+		inverseSquare = 1 / ( dist * dist );
+	}
+
 	shadowRay.direction = dir;
 
-	// check for obstructions
-	for ( Primitive *p : primitives )
+	for ( Primitive *prim : primitives )
 	{
-		Hit shdw = p->hit( shadowRay );
-		if ( shdw.isHit && dist > shdw.t )
+		if ( prim->hit( shadowRay ).hitType != 0 )
 		{
-			return 0.f;
+			return vec3();
 		}
 	}
 
-	float angle = abs(h.normal.dot( dir ));
-
-	// No hits, return intensity at distance
-	return l->intensity * angle * ( 1 / ( dist * dist ) );
+	float dot = h.normal.dot( dir );
+	if ( dot > 0 )
+	{
+		return l->color * l->intensity * dot * inverseSquare;
+	}
+	else
+	{
+		return vec3();
+	}
 }
 
 Pixel Renderer::rgb( float r, float g, float b ) const
@@ -149,4 +200,9 @@ Pixel Renderer::rgb( float r, float g, float b ) const
 	pix = ( (int)cr << 16 ) | ( (int)cg << 8 ) | ( (int)cb );
 
 	return pix;
+}
+
+Pixel Renderer::rgb( vec3 vec ) const
+{
+	return rgb( vec.x, vec.y, vec.z );
 }

@@ -1,7 +1,7 @@
 #pragma once
 struct Hit
 {
-	bool isHit;
+	int hitType;
 	float t;
 	vec3 coordinates;
 	vec3 normal;

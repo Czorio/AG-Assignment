@@ -1,18 +1,16 @@
 #pragma once
 
+enum LightType
+{
+	DIRECTIONAL_LIGHT,
+	POINT_LIGHT
+};
+
 struct Light
 {
+	LightType type;
 	vec3 origin;
-	vec3 color;
+	vec3 direction;
 	float intensity;
-};
-
-struct SpotLight : public Light
-{
-	vec3 direction;
-};
-
-struct DirectionalLight : public Light
-{
-	vec3 direction;
+	vec3 color;
 };

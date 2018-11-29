@@ -8,6 +8,7 @@ struct Material
 
 struct GlassMaterial : public Material
 {
+	float refraction;
 	float n;
 	float attenuation;
 };
