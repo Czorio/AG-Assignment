@@ -26,7 +26,7 @@ struct Sphere : public Primitive
 	Hit hit( const Ray &r ) const override
 	{
 		Hit h;
-		h.isHit = false;
+		h.hitType = 0;
 		vec3 C = origin - r.origin;
 		float t = dot( C, r.direction );
 		vec3 Q = C - t * r.direction;
@@ -44,7 +44,7 @@ struct Sphere : public Primitive
 			return h;
 		}
 
-		h.isHit = true;
+		h.hitType = 1;
 		h.t = t;
 		h.coordinates = r( t );
 		h.mat = mat;

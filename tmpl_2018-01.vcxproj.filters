@@ -128,6 +128,9 @@
     <ClInclude Include="lib\SDL2-2.0.9\include\SDL2\SDL_version.h" />
     <ClInclude Include="lib\SDL2-2.0.9\include\SDL2\SDL_video.h" />
     <ClInclude Include="lib\SDL2-2.0.9\include\SDL2\SDL_vulkan.h" />
+    <ClInclude Include="tiny_obj_loader.h">
+      <Filter>Extra Libs</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="template code">
@@ -135,6 +138,9 @@
     </Filter>
     <Filter Include="Whitted">
       <UniqueIdentifier>{bd3e79a0-59cc-4995-82df-ec4f0a269859}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Extra Libs">
+      <UniqueIdentifier>{2defa15d-67e0-4084-9066-f49cdc7ace61}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

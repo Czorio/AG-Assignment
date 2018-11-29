@@ -7,11 +7,16 @@
 // Prevent expansion clashes (when using std::min and std::max):
 #define NOMINMAX
 
-#define SCRWIDTH 1000
-#define SCRHEIGHT 1000
+#define SCRWIDTH 512
+#define SCRHEIGHT 512
 #define TILESIZE 8
 
-#define MAXDEPTH 50
+#define MAXDEPTH 16
+#define	SAMPLES 1
+
+#define SHADOWBIAS 0.0004f
+#define REFLECTIONBIAS 0.0004f
+
 // #define FULLSCREEN
 // #define ADVANCEDGL	// faster if your system supports it
 

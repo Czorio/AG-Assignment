@@ -11,5 +11,6 @@ struct Light
 	LightType type;
 	vec3 origin;
 	vec3 direction;
+	float intensity;
 	vec3 color;
 };

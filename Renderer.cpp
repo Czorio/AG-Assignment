@@ -96,7 +96,7 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 	for ( Primitive *p : primitives )
 	{
 		Hit tmp = p->hit( r );
-		if ( tmp.isHit )
+		if ( tmp.hitType != 0 )
 		{
 			if ( tmp.t < closestHit.t )
 			{
@@ -129,7 +129,7 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 
 		vec3 reflDir = r.direction - 2.f * r.direction.dot( closestHit.normal ) * closestHit.normal;
 		Ray refl;
-		refl.origin = closestHit.coordinates + ( 0.0004f * closestHit.normal );
+		refl.origin = closestHit.coordinates + ( REFLECTIONBIAS * closestHit.normal );
 		refl.direction = reflDir;
 
 		specular = shootRay( refl, depth - 1 );
@@ -145,27 +145,30 @@ vec3 Renderer::shadowRay( const Hit &h, const Light *l ) const
 {
 	Ray shadowRay;
 	// Shadow bias
-	shadowRay.origin = h.coordinates + ( 0.0004f * h.normal );
+	shadowRay.origin = h.coordinates + ( SHADOWBIAS * h.normal );
 	float dist;
+	float inverseSquare;
 	vec3 dir;
 
 	if ( l->type == LightType::DIRECTIONAL_LIGHT )
 	{
 		dist = FLT_MAX;
 		dir = -1 * l->direction;
+		inverseSquare = 1.f;
 	}
 	else if ( l->type == LightType::POINT_LIGHT )
 	{
 		dir = l->origin - h.coordinates;
 		dist = dir.length();
 		dir.normalize();
+		inverseSquare = 1 / ( dist * dist );
 	}
 
 	shadowRay.direction = dir;
 
 	for ( Primitive *prim : primitives )
 	{
-		if ( prim->hit( shadowRay ).isHit )
+		if ( prim->hit( shadowRay ).hitType != 0 )
 		{
 			return vec3();
 		}
@@ -174,7 +177,7 @@ vec3 Renderer::shadowRay( const Hit &h, const Light *l ) const
 	float dot = h.normal.dot( dir );
 	if ( dot > 0 )
 	{
-		return l->color * dot;
+		return l->color * l->intensity * dot * inverseSquare;
 	}
 	else
 	{
