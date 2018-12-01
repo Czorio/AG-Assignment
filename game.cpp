@@ -78,19 +78,20 @@ void Game::Init()
 
 	// Create "sun"
 	Light *l = new Light();
-	l->type = LightType::DIRECTIONAL_LIGHT;
+	l->type = LightType::SPOT_LIGHT;
 	l->color = vec3( 1.f, 1.f, 1.f );
-	l->intensity = 1.f;
-	l->direction = vec3( 0.f, 1.f, 1.f );
+	l->intensity = 20.f;
+	l->fov = 12.5f;
+	l->direction = vec3( 1.f, 1.f, 0.f );
 	l->direction.normalize();
-	l->origin = vec3();
+	l->origin = vec3( 0.f, 3.f, 4.f );
 	lights[0] = l;
 
 	// Create point light
 	Light *l2 = new Light();
 	l2->type = LightType::POINT_LIGHT;
 	l2->color = vec3( 1.f, 1.f, 1.f );
-	l2->intensity = 2.5f;
+	l2->intensity = 0.f;
 	l2->direction = vec3( 0.f, 1.f, 1.f );
 	l2->direction.normalize();
 	l2->origin = vec3( 0.f, -2.f, 1.f );

@@ -280,6 +280,15 @@ vec3 Renderer::shadowRay( const Hit &h, const Light *l ) const
 		inverseSquare = 1 / ( dist * dist );
 		intensity = l->intensity;
 	}
+	else if ( l->type == LightType::SPOT_LIGHT )
+	{
+		// A spotlight is essentially a point light, but we don't register certain angles away from the light's direction
+
+		dir = l->origin - h.coordinates;
+		dist = dir.length();
+		dir.normalize();
+		inverseSquare = 1 / ( dist * dist );
+	}
 
 	shadowRay.direction = dir;
 	// Shadow bias
