@@ -192,7 +192,7 @@ vec3 Renderer::shadowRay( const Hit &h, const Light *l ) const
 		dist = FLT_MAX;
 		dir = -1 * l->direction;
 		inverseSquare = 1.f;
-		intensity = 1.f;
+		intensity = l->intensity;
 	}
 	else if ( l->type == LightType::POINT_LIGHT )
 	{
@@ -226,11 +226,23 @@ vec3 Renderer::shadowRay( const Hit &h, const Light *l ) const
 	}
 }
 
+void clampFloat(float& val, float lo, float hi)
+{
+	if ( val > hi )
+	{
+		val = hi;
+	}
+	else if ( val < lo )
+	{
+		val = lo;
+	}
+}
+
 Pixel Renderer::rgb( float r, float g, float b ) const
 {
-	clamp( r, 0.f, 1.f );
-	clamp( g, 0.f, 1.f );
-	clamp( b, 0.f, 1.f );
+	clampFloat( r, 0.f, 1.f );
+	clampFloat( g, 0.f, 1.f );
+	clampFloat( b, 0.f, 1.f );
 
 	unsigned char cr = r * 255;
 	unsigned char cg = g * 255;

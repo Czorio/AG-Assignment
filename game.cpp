@@ -8,7 +8,7 @@ Renderer *renderer;
 void Game::Init()
 {
 	unsigned noPrims = 12;
-	unsigned noLights = 1;
+	unsigned noLights = 2;
 
 	Camera cam = Camera( vec3( 0.f, 0.f, -5.f ), vec3( 0.f, 0.f, 1.f ), 1.f, ( (float)SCRWIDTH / (float)SCRHEIGHT ) );
 
@@ -55,7 +55,7 @@ void Game::Init()
 	prims[6] = new Sphere( vec3( -1.f, 0.f, 4.f ), .5f, mat );
 
 	mat.type = MaterialType::MIRROR_MAT;
-	mat.spec = 1.f;
+	mat.spec = 0.5f;
 	mat.color = vec3( 0.33f, 1.f, 0.33f );
 	prims[7] = new Sphere( vec3( 0.f, 0.f, 4.f ), .5f, mat );
 
@@ -84,8 +84,17 @@ void Game::Init()
 	l->direction = vec3( 0.f, 1.f, 1.f );
 	l->direction.normalize();
 	l->origin = vec3();
-
 	lights[0] = l;
+
+	// Create point light
+	Light *l2 = new Light();
+	l2->type = LightType::POINT_LIGHT;
+	l2->color = vec3( 1.f, 1.f, 1.f );
+	l2->intensity = 1.f;
+	l2->direction = vec3( 0.f, 1.f, 1.f );
+	l2->direction.normalize();
+	l2->origin = vec3( 0.f, -2.f, 2.f );
+	lights[1] = l2;
 
 	renderer = new Renderer();
 	renderer->setCamera( cam );
