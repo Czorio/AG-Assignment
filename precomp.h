@@ -16,8 +16,9 @@
 
 #define SHADOWBIAS 0.0004f
 #define REFLECTIONBIAS 0.0004f
+#define REFRACTIONBIAS 0.0004f
 
-#define AMBIENTLIGHT 0.1f
+#define AMBIENTLIGHT 0.f
 
 // #define FULLSCREEN
 // #define ADVANCEDGL	// faster if your system supports it

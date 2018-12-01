@@ -12,6 +12,7 @@ struct Ray
 {
 	vec3 origin;
 	vec3 direction;
+	float refractionIndex = 1.f;
 
 	vec3 operator()(const float t) const
 	{

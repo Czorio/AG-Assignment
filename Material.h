@@ -12,7 +12,6 @@ struct Material
 	MaterialType type;
 	vec3 color;
 	float spec;
-	float refraction;
-	float n;
+	float refractionIndex;
 	float attenuation;
 };

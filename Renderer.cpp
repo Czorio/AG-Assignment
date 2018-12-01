@@ -1,5 +1,17 @@
 #include "precomp.h"
 
+// Makes converting from RGB to a Pixel easy
+union Color {
+	Pixel pixel;
+	struct
+	{
+		Pixel b : 8;
+		Pixel g : 8;
+		Pixel r : 8;
+		Pixel a : 8;
+	} c;
+};
+
 Renderer::Renderer()
 {
 	threads = vector<thread>( thread::hardware_concurrency() );
@@ -90,9 +102,6 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 	Hit closestHit;
 	closestHit.t = FLT_MAX;
 
-	// Initialize color to black
-	closestHit.mat.color = vec3();
-
 	// Find nearest hit
 	for ( Primitive *p : primitives )
 	{
@@ -109,7 +118,7 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 	// No hit
 	if ( closestHit.t == FLT_MAX )
 	{
-		return rgb( 0.f, 0.f, 0.f );
+		return vec3();
 	}
 
 	vec3 lightIntensity = vec3( AMBIENTLIGHT, AMBIENTLIGHT, AMBIENTLIGHT );
@@ -120,29 +129,51 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 		lightIntensity += shadowRay( closestHit, l );
 	}
 
-	vec3 color;
+	vec3 color = vec3();
 
-	if ( depth > 0 && closestHit.mat.type == MaterialType::DIFFUSE_MAT)
-	{
-		color = closestHit.mat.color * lightIntensity;
-	}
 	// Reflection
-	else if ( depth > 0 && closestHit.mat.type == MaterialType::MIRROR_MAT )
+	if ( depth > 0 && closestHit.mat.type == MaterialType::MIRROR_MAT )
 	{
-		vec3 reflDir = r.direction - 2.f * r.direction.dot( closestHit.normal ) * closestHit.normal;
 		Ray refl;
-		refl.origin = closestHit.coordinates + ( REFLECTIONBIAS * closestHit.normal );
+		vec3 reflDir = r.direction - 2.f * r.direction.dot( closestHit.normal ) * closestHit.normal;
+		refl.origin = closestHit.coordinates + ( REFLECTIONBIAS * reflDir );
 		refl.direction = reflDir;
 
 		vec3 specular = shootRay( refl, depth - 1 );
-		color = (closestHit.mat.color * lightIntensity) * (1.f - closestHit.mat.spec);
+		color = ( closestHit.mat.color * lightIntensity ) * ( 1.f - closestHit.mat.spec );
 		specular *= closestHit.mat.spec;
 		color += specular;
 	}
 	// Refraction
 	else if ( depth > 0 && closestHit.mat.type == MaterialType::GLASS_MAT )
 	{
-		// TODO: refraction
+		float n = r.refractionIndex / closestHit.mat.refractionIndex;
+		// If we hit from inside, flip the normal
+		vec3 normal = closestHit.normal * closestHit.hitType;
+		float cosI = -1 * normal.dot( r.direction );
+		float cosT2 = 1.f - ( n * n ) * ( 1.f - ( cosI * cosI ) );
+
+		if ( cosT2 > 0.f )
+		{
+			Ray refr;
+			vec3 refractedDirection = ( normal * r.direction ) + ( normal * cosI - sqrt( cosT2 ) ) * normal;
+			refractedDirection.normalize();
+			refr.origin = closestHit.coordinates + ( REFRACTIONBIAS * refractedDirection );
+			refr.direction = refractedDirection;
+			if ( closestHit.hitType == -1 )
+			{
+				refr.refractionIndex = closestHit.mat.refractionIndex;
+			}
+
+			vec3 refracted = shootRay( refr, depth - 1 );
+
+			color += refracted;
+		}
+	}
+	// Not refractive or reflective, or we've reached the end of the allowed depth
+	else
+	{
+		color = closestHit.mat.color * lightIntensity;
 	}
 
 	return color;
@@ -201,15 +232,17 @@ Pixel Renderer::rgb( float r, float g, float b ) const
 	clamp( g, 0.f, 1.f );
 	clamp( b, 0.f, 1.f );
 
-	Pixel pix = 0x000000;
-
 	unsigned char cr = r * 255;
 	unsigned char cg = g * 255;
 	unsigned char cb = b * 255;
 
-	pix = ( (int)cr << 16 ) | ( (int)cg << 8 ) | ( (int)cb );
+	Color c;
+	c.c.a = 255; // alpha
+	c.c.r = cr;  // red
+	c.c.g = cg;  // green
+	c.c.b = cb;  // blue
 
-	return pix;
+	return c.pixel;
 }
 
 Pixel Renderer::rgb( vec3 vec ) const
