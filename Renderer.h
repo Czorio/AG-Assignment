@@ -12,6 +12,8 @@ class Renderer
 	void setCamera( Camera cam );
 
 	Camera *getCamera();
+	void moveCam( vec3 vec );
+	void rotateCam( vec3 vec );
 
 	Pixel *getOutput();
 

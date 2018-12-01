@@ -1,14 +1,17 @@
 #pragma once
 
-struct Material
+enum MaterialType
 {
-	vec3 color;
-	float spec;
+	DIFFUSE_MAT,
+	MIRROR_MAT,
+	GLASS_MAT
 };
 
-struct GlassMaterial : public Material
+struct Material
 {
-	float refraction;
-	float n;
+	MaterialType type;
+	vec3 color;
+	float spec;
+	float refractionIndex;
 	float attenuation;
 };
