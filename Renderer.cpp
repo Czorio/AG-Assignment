@@ -156,7 +156,7 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 		if ( cosT2 > 0.f )
 		{
 			Ray refr;
-			vec3 refractedDirection = ( normal * r.direction ) + ( normal * cosI - sqrt( cosT2 ) ) * normal;
+			vec3 refractedDirection = ( n * r.direction ) + ( n * cosI - sqrtf( cosT2 ) ) * normal;
 			refractedDirection.normalize();
 			refr.origin = closestHit.coordinates + ( REFRACTIONBIAS * refractedDirection );
 			refr.direction = refractedDirection;
@@ -226,7 +226,7 @@ vec3 Renderer::shadowRay( const Hit &h, const Light *l ) const
 	}
 }
 
-void clampFloat(float& val, float lo, float hi)
+inline void clampFloat(float& val, float lo, float hi)
 {
 	if ( val > hi )
 	{
