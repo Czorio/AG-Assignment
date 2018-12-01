@@ -129,7 +129,7 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 
 		vec3 reflDir = r.direction - 2.f * r.direction.dot( closestHit.normal ) * closestHit.normal;
 		Ray refl;
-		refl.origin = closestHit.coordinates + ( REFLECTIONBIAS * closestHit.normal );
+		refl.origin = closestHit.coordinates +( REFLECTIONBIAS * closestHit.normal );
 		refl.direction = reflDir;
 
 		specular = shootRay( refl, depth - 1 );
@@ -146,6 +146,7 @@ vec3 Renderer::shadowRay( const Hit &h, const Light *l ) const
 	Ray shadowRay;
 	// Shadow bias
 	shadowRay.origin = h.coordinates + ( SHADOWBIAS * h.normal );
+	shadowRay.type = SHADOW_RAY;
 	float dist;
 	float inverseSquare;
 	vec3 dir;
@@ -181,7 +182,7 @@ vec3 Renderer::shadowRay( const Hit &h, const Light *l ) const
 	}
 	else
 	{
-		return vec3();
+		return vec3(); 
 	}
 }
 

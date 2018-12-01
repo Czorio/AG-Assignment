@@ -19,7 +19,9 @@ void Game::Init()
 	Material mat;
 	mat.color = vec3( 0.75f, 0.75f, 0.75f );
 	mat.spec = 0.25f;
-	prims[0] = new Sphere( vec3( 0.f, 1000010.f, 0.f ), 1000000.f, mat );
+	prims[0] = new Plane( vec3( 0.f, 10.f, -5.f ), vec3( 0.f, -1.f, -0.1f ), mat );
+	
+	// prims[0] = new Sphere( vec3( 0.f, 1000010.f, 0.f ), 1000000.f, mat );
 
 	// Glass Sphere
 	GlassMaterial glassMat;
