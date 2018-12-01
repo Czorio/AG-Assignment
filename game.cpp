@@ -15,8 +15,7 @@ void Game::Init()
 	vector<Primitive *> prims = vector<Primitive *>( noPrims );
 	vector<Light *> lights = vector<Light *>( noLights );
 
-	// Base
-	Material mat;
+  // Base sphere
 	mat.type = MaterialType::DIFFUSE_MAT;
 	mat.color = vec3( 0.5f, 0.5f, 0.5f );
 	prims[0] = new Sphere( vec3( 0.f, 1005.f, 0.f ), 1000.f, mat );

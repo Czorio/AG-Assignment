@@ -13,9 +13,10 @@ struct Primitive
 
 	Primitive( vec3 origin, Material mat ) : origin( origin ), mat( mat ) {}
 
-	virtual Hit hit( const Ray &r ) const = 0;
+	virtual Hit hit( const Ray &ray ) const = 0;
 };
 
+// https://goo.gl/UwMZKg  link to scratchapixel with code and figure
 struct Sphere : public Primitive
 {
 	float radius;
@@ -118,5 +119,37 @@ struct Sphere : public Primitive
 
 
 		}
+	}
+};
+
+struct Plane : public Primitive
+{
+	vec3 n;
+	Plane( vec3 origin, vec3 normal, Material mat ) : Primitive( origin, mat ), n( normal ) { }
+
+	Hit hit( const Ray &ray ) const override
+	{
+		Hit P;
+		vec3 normal = n; // so that it can be normalized
+		normal.normalize();
+		P.hitType = 0;
+
+		float denom = dot( normal, ray.direction );
+
+		if ( abs( denom ) > 1e-6 ) // DEFINE AN EPSILON?
+		{
+			vec3 p0_O = origin - ray.origin; // vector from ray origin to plane origin (point p0)
+			float t = dot( p0_O, normal ) / denom;
+
+			if ( t >= 0 )
+			{
+				P.hitType = 1;
+				P.t = t;
+				P.coordinates = ray( t );
+				P.mat = mat;
+				P.normal = normal;
+			}
+		}
+		return P;
 	}
 };
