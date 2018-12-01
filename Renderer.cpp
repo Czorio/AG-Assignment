@@ -86,6 +86,17 @@ Camera *Renderer::getCamera()
 	return &cam;
 }
 
+// As preparation for iterative rendering
+void Renderer::moveCam( vec3 vec )
+{
+	cam.move( vec );
+}
+
+// As preparation for iterative rendering
+void Renderer::rotateCam( vec3 vec )
+{
+}
+
 Pixel *Renderer::getOutput()
 {
 	return buffer;

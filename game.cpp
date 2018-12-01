@@ -32,7 +32,7 @@ void Game::Init()
 	glassMat.color = vec3( 1.f, 0.5f, 0.f );
 	glassMat.spec = 1.f;
 	glassMat.refractionIndex = 1.458f;
-	glassMat.attenuation = 0.5f;
+	glassMat.attenuation = 2.5f;
 	prims[2] = new Sphere( vec3( 0.f, 0.f, 0.f ), 1.f, glassMat );
 
 	// 3x3 grid of spheres
@@ -90,10 +90,10 @@ void Game::Init()
 	Light *l2 = new Light();
 	l2->type = LightType::POINT_LIGHT;
 	l2->color = vec3( 1.f, 1.f, 1.f );
-	l2->intensity = 1.f;
+	l2->intensity = 2.5f;
 	l2->direction = vec3( 0.f, 1.f, 1.f );
 	l2->direction.normalize();
-	l2->origin = vec3( 0.f, -2.f, 2.f );
+	l2->origin = vec3( 0.f, -2.f, 1.f );
 	lights[1] = l2;
 
 	renderer = new Renderer();
@@ -112,11 +112,49 @@ void Game::Shutdown()
 
 bool showHelp = false;
 
+bool moveLeft = false;
+bool moveRight = false;
+bool moveUp = false;
+bool moveDown = false;
+bool moveForward = false;
+bool moveBackward = false;
+
 // -----------------------------------------------------------
 // Main application tick function
 // -----------------------------------------------------------
 void Game::Tick( float deltaTime )
 {
+	// Handle input
+	if ( moveLeft )
+	{
+		renderer->moveCam( vec3( -0.01f, 0.f, 0.f ) );
+	}
+
+	if ( moveRight )
+	{
+		renderer->moveCam( vec3( 0.01f, 0.f, 0.f ) );
+	}
+
+	if ( moveUp )
+	{
+		renderer->moveCam( vec3( 0.f, -0.01f, 0.f ) );
+	}
+
+	if ( moveDown )
+	{
+		renderer->moveCam( vec3( 0.f, 0.01f, 0.f ) );
+	}
+
+	if ( moveForward )
+	{
+		renderer->moveCam( vec3( 0.f, 0.f, 0.01f ) );
+	}
+
+	if ( moveBackward )
+	{
+		renderer->moveCam( vec3( 0.f, 0.f, -0.01f ) );
+	}
+
 	// clear the graphics window
 	screen->Clear( 0 );
 
@@ -144,27 +182,54 @@ void Tmpl8::Game::MouseMove( int x, int y )
 	// TODO: Rotation
 }
 
+void Tmpl8::Game::KeyUp( int key )
+{
+	switch ( key )
+	{
+	case SDL_SCANCODE_D:
+		moveRight = false;
+		break;
+	case SDL_SCANCODE_A:
+		moveLeft = false;
+		break;
+	case SDL_SCANCODE_W:
+		moveForward = false;
+		break;
+	case SDL_SCANCODE_S:
+		moveBackward = false;
+		break;
+	case SDL_SCANCODE_SPACE:
+		moveUp = false;
+		break;
+	case SDL_SCANCODE_LCTRL:
+		moveDown = false;
+		break;
+	default:
+		break;
+	}
+}
+
 void Tmpl8::Game::KeyDown( int key )
 {
 	switch ( key )
 	{
 	case SDL_SCANCODE_D:
-		renderer->getCamera()->move( vec3( 0.1f, 0.f, 0.f ) );
+		moveRight = true;
 		break;
 	case SDL_SCANCODE_A:
-		renderer->getCamera()->move( vec3( -0.1f, 0.f, 0.f ) );
+		moveLeft = true;
 		break;
 	case SDL_SCANCODE_W:
-		renderer->getCamera()->move( vec3( 0.f, 0.f, 0.1f ) );
+		moveForward = true;
 		break;
 	case SDL_SCANCODE_S:
-		renderer->getCamera()->move( vec3( 0.f, 0.f, -0.1f ) );
+		moveBackward = true;
 		break;
 	case SDL_SCANCODE_SPACE:
-		renderer->getCamera()->move( vec3( 0.f, -0.1f, 0.f ) );
+		moveUp = true;
 		break;
 	case SDL_SCANCODE_LCTRL:
-		renderer->getCamera()->move( vec3( 0.f, 0.1f, 0.f ) );
+		moveDown = true;
 		break;
 	case SDL_SCANCODE_H:
 		showHelp = !showHelp;
