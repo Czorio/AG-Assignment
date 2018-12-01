@@ -155,19 +155,28 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 
 		if ( cosT2 > 0.f )
 		{
+			// Refraction occurs, send out rays
 			Ray refr;
 			vec3 refractedDirection = ( n * r.direction ) + ( n * cosI - sqrtf( cosT2 ) ) * normal;
 			refractedDirection.normalize();
 			refr.origin = closestHit.coordinates + ( REFRACTIONBIAS * refractedDirection );
 			refr.direction = refractedDirection;
+
+			vec3 attenuation = vec3( 1.f, 1.f, 1.f );
+
 			if ( closestHit.hitType == -1 )
 			{
+				// If we hit from inside the object, add in Attenuation and set the refraction index on the Ray
 				refr.refractionIndex = closestHit.mat.refractionIndex;
+
+				// Calculate attenuation of the light through Beer's Law
+				vec3 absorbance = ( vec3( 1.f, 1.f, 1.f ) - closestHit.mat.color ) * closestHit.mat.attenuation * -1.f * closestHit.t;
+				attenuation = vec3( expf( absorbance.x ), expf( absorbance.y ), expf( absorbance.z ) );
 			}
 
 			vec3 refracted = shootRay( refr, depth - 1 );
 
-			color += refracted;
+			color += refracted * attenuation;
 		}
 	}
 	// Not refractive or reflective, or we've reached the end of the allowed depth
@@ -226,7 +235,7 @@ vec3 Renderer::shadowRay( const Hit &h, const Light *l ) const
 	}
 }
 
-inline void clampFloat(float& val, float lo, float hi)
+inline void clampFloat( float &val, float lo, float hi )
 {
 	if ( val > hi )
 	{
