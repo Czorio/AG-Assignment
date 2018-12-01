@@ -15,15 +15,17 @@ void Game::Init()
 	vector<Primitive *> prims = vector<Primitive *>( noPrims );
 	vector<Light *> lights = vector<Light *>( noLights );
 
-  // Base sphere
-	mat.type = MaterialType::DIFFUSE_MAT;
+	// Base plane
+	Material mat;
+	mat.type = MaterialType::MIRROR_MAT;
+	mat.spec = 0.25f;
 	mat.color = vec3( 0.5f, 0.5f, 0.5f );
-	prims[0] = new Sphere( vec3( 0.f, 1005.f, 0.f ), 1000.f, mat );
+	prims[0] = new Plane( vec3( 0.f, 5.f, 0.f ), vec3(0.f, -1.f, 0.f), mat );
 
 	// Back wall
 	mat.type = MaterialType::DIFFUSE_MAT;
 	mat.color = vec3( 1.f, 1.f, 1.f );
-	prims[1] = new Sphere( vec3( 0.f, 0.f, 1005.f ), 0.f, mat );
+	prims[1] = new Plane( vec3( 0.f, 0.f, 5.f ), vec3( 0.f, 0.f, -1.f ), mat );
 
 	// Glass Sphere
 	Material glassMat;
@@ -32,7 +34,7 @@ void Game::Init()
 	glassMat.spec = 1.f;
 	glassMat.refractionIndex = 1.1f;
 	glassMat.attenuation = 2.5f;
-	prims[2] = new Sphere( vec3( 0.f, 0.f, 0.f ), 0.f, glassMat );
+	prims[2] = new Sphere( vec3( 0.f, 0.f, 0.f ), .5f, glassMat );
 
 	// 3x3 grid of spheres
 	// Top row
@@ -77,11 +79,11 @@ void Game::Init()
 
 	// Create "sun"
 	Light *l = new Light();
-	l->type = LightType::SPOT_LIGHT;
+	l->type = LightType::DIRECTIONAL_LIGHT;
 	l->color = vec3( 1.f, 1.f, 1.f );
-	l->intensity = 20.f;
+	l->intensity = 1.f;
 	l->fov = 12.5f;
-	l->direction = vec3( 1.f, 1.f, 0.f );
+	l->direction = vec3( 0.f, 1.f, 1.f );
 	l->direction.normalize();
 	l->origin = vec3( 0.f, 3.f, 4.f );
 	lights[0] = l;
