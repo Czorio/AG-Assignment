@@ -22,39 +22,103 @@ struct Sphere : public Primitive
 	float radius;
 	float r2;
 
-	Sphere( vec3 origin, float radius, Material mat ) : Primitive( origin, mat ), radius( radius ), r2( radius * radius ) { }
+	Sphere( vec3 origin, float radius, Material mat ) : Primitive( origin, mat ), radius( radius ), r2( radius * radius ) {}
 
-	Hit hit( const Ray &ray ) const override
+	Hit hit( const Ray &r ) const override
 	{
-		Hit P;
-		P.hitType = 0;
-		float t0, t1;
-		vec3 L = origin - ray.origin;
-		float tca = dot( L, ray.direction );
-		if ( tca < 0 ) return P;
-		float d2 = dot( L, L ) - tca * tca;
-		if ( d2 > r2 ) return P;
-		float thc = sqrt( r2 - d2 );
-		t0 = tca - thc;
-		t1 = tca + thc;
+		Hit h;
+		h.hitType = 0;
 
-		if ( t0 > t1 ) std::swap( t0, t1 );
+		float a = r.direction.dot( r.direction );
+		float b = ( 2.f * r.direction ).dot( r.origin - origin );
+		float c = ( r.origin - origin ).dot( r.origin - origin ) - r2;
 
-		if ( t0 < 0 )
+		float d = ( b * b ) - ( 4 * a * c );
+		float t;
+
+		if ( d < 0 ) // No hits
 		{
-			t0 = t1;				// if t0 is negative, let's use t1 instead
-			if ( t0 < 0 ) return P; // both t0 and t1 are negative
+			return h;
 		}
+		else if ( d == 0 ) // One hit
+		{
+			// Square root of d is 0, we can leave it out
+			t = ( -1 * b ) / ( 2 * a );
 
-		P.hitType = 1;
-		P.t = t0;
-		P.coordinates = ray( t0 );
-		P.mat = mat;
+			if ( t < 0 )
+			{
+				return h;
+			}
 
-		vec3 normal = P.coordinates - origin;
-		normal.normalize();
-		P.normal = normal;
-		return P;
+			h.t = t;
+			h.coordinates = r( t );
+			h.mat = mat;
+
+			vec3 normal = h.coordinates - origin;
+			normal.normalize();
+			h.normal = normal;
+
+			float dot = normal.dot( r.direction );
+
+			if ( dot > 0 ) // inside out
+			{
+				h.hitType = -1;
+			}
+			else if ( dot < 0 ) // outside in
+			{
+				h.hitType = 1;
+			}
+
+			return h;
+		}
+		else // Two hits
+		{
+			float t1 = ( ( -1 * b ) - sqrt( d ) ) / ( 2 * a ); // Should be lowest possible t; closest t
+			float t2 = ( ( -1 * b ) + sqrt( d ) ) / ( 2 * a ); // Should be highest possible t; furthest t
+
+			if ( t1 > 0 )
+			{
+				// Outside in
+				h.hitType = 1;
+				h.t = t1;
+				h.coordinates = r( t1 );
+				
+				h.mat = mat;
+
+				vec3 normal = h.coordinates - origin;
+				normal.normalize();
+				h.normal = normal;
+
+				return h;
+			}
+			else if (t1 < 0 && t2 > 0)
+			{
+				// This situation happens when you start from within the sphere
+				h.hitType = -1;
+				h.t = t2;
+
+				h.coordinates = r( t2 );
+				h.mat = mat;
+
+				vec3 normal = h.coordinates - origin;
+				normal.normalize();
+				h.normal = normal;
+
+				return h;
+			}
+			else if (t1 < 0 && t2 < 0)
+			{
+				// No hits 
+				return h;
+			}
+			else
+			{
+				// Some weird situation that I didn't account for
+				return h;
+			}
+
+
+		}
 	}
 };
 

@@ -3,7 +3,8 @@
 enum LightType
 {
 	DIRECTIONAL_LIGHT,
-	POINT_LIGHT
+	POINT_LIGHT,
+	SPOT_LIGHT
 };
 
 struct Light
@@ -12,5 +13,6 @@ struct Light
 	vec3 origin;
 	vec3 direction;
 	float intensity;
+	float fov;
 	vec3 color;
 };

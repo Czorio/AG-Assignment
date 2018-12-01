@@ -1,24 +1,18 @@
 #pragma once
 struct Hit
 {
-	int hitType;
+	int hitType;// -1 hit from inside; 0 no hit; 1 hit
 	float t;
 	vec3 coordinates;
 	vec3 normal;
 	Material mat;
 };
 
-enum RayType
-{
-	PRIMARY_RAY,
-	SHADOW_RAY
-};
-
 struct Ray
 {
 	vec3 origin;
 	vec3 direction;
-	RayType type = PRIMARY_RAY;
+	float refractionIndex = 1.f;
 
 	vec3 operator()(const float t) const
 	{
