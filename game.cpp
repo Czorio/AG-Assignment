@@ -24,16 +24,16 @@ void Game::Init()
 	// Back wall
 	mat.type = MaterialType::DIFFUSE_MAT;
 	mat.color = vec3( 1.f, 1.f, 1.f );
-	prims[1] = new Sphere( vec3( 0.f, 0.f, 1005.f ), 1000.f, mat );
+	prims[1] = new Sphere( vec3( 0.f, 0.f, 1005.f ), 0.f, mat );
 
 	// Glass Sphere
 	Material glassMat;
 	glassMat.type = MaterialType::GLASS_MAT;
-	glassMat.color = vec3( 1.f, 0.5f, 0.f );
+	glassMat.color = vec3( 1.f, 1.f, 1.f );
 	glassMat.spec = 1.f;
-	glassMat.refractionIndex = 1.458f;
+	glassMat.refractionIndex = 1.1f;
 	glassMat.attenuation = 2.5f;
-	prims[2] = new Sphere( vec3( 0.f, 0.f, 0.f ), 1.f, glassMat );
+	prims[2] = new Sphere( vec3( 0.f, 0.f, 0.f ), 0.f, glassMat );
 
 	// 3x3 grid of spheres
 	// Top row

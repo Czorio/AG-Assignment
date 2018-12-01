@@ -108,6 +108,47 @@ vec3 Renderer::shootRay( unsigned x, unsigned y, unsigned depth ) const
 	return shootRay( r, depth );
 }
 
+inline void clampFloat( float &val, float lo, float hi )
+{
+	if ( val > hi )
+	{
+		val = hi;
+	}
+	else if ( val < lo )
+	{
+		val = lo;
+	}
+}
+
+// Code adapted from Scratchapixel
+void calcFresnel( const vec3 &rayDir, const vec3 &normal, const float &refractiveIndex, float &kr )
+{
+	float cosI = -1 * normal.dot( rayDir );
+	float etaI = 1;
+	float etaT = refractiveIndex;
+	if ( cosI > 0 )
+	{
+		swap( etaI, etaT );
+	}
+
+	float sinT = etaI / etaT * sqrtf( max( 0.f, 1 - cosI * cosI ) );
+
+	if ( sinT >= 1 )
+	{
+		// Total internal reflection
+		kr = 1;
+	}
+	else
+	{
+		float cosT = sqrtf( max( 0.f, 1 - sinT * sinT ) );
+		cosI = fabsf( cosI );
+		float Rs = ( ( etaT * cosI ) - ( etaI * cosT ) ) / ( ( etaT * cosI ) + ( etaI * cosT ) );
+		float Rp = ( ( etaI * cosI ) - ( etaT * cosT ) ) / ( ( etaI * cosI ) + ( etaT * cosT ) );
+
+		kr = ( Rs * Rs + Rp * Rp ) / 2;
+	}
+}
+
 vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 {
 	Hit closestHit;
@@ -158,15 +199,20 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 	// Refraction
 	else if ( depth > 0 && closestHit.mat.type == MaterialType::GLASS_MAT )
 	{
-		float n = r.refractionIndex / closestHit.mat.refractionIndex;
-		// If we hit from inside, flip the normal
-		vec3 normal = closestHit.normal * closestHit.hitType;
-		float cosI = -1 * normal.dot( r.direction );
-		float cosT2 = 1.f - ( n * n ) * ( 1.f - ( cosI * cosI ) );
+		vec3 refracted = vec3();
+		vec3 reflected = vec3();
+		float kr = 0.f;
+		calcFresnel( r.direction, closestHit.normal, closestHit.mat.refractionIndex, kr );
 
-		if ( cosT2 > 0.f )
+		// Do we need to refract?
+		if ( kr < 1.f )
 		{
-			// Refraction occurs, send out rays
+			float n = r.refractionIndex / closestHit.mat.refractionIndex;
+			// If we hit from inside, flip the normal
+			vec3 normal = closestHit.normal * closestHit.hitType;
+			float cosI = -1 * normal.dot( r.direction );
+			float cosT2 = 1.f - ( n * n ) * ( 1.f - ( cosI * cosI ) );
+
 			Ray refr;
 			vec3 refractedDirection = ( n * r.direction ) + ( n * cosI - sqrtf( cosT2 ) ) * normal;
 			refractedDirection.normalize();
@@ -174,7 +220,6 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 			refr.direction = refractedDirection;
 
 			vec3 attenuation = vec3( 1.f, 1.f, 1.f );
-
 			if ( closestHit.hitType == -1 )
 			{
 				// If we hit from inside the object, add in Attenuation and set the refraction index on the Ray
@@ -185,10 +230,23 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 				attenuation = vec3( expf( absorbance.x ), expf( absorbance.y ), expf( absorbance.z ) );
 			}
 
-			vec3 refracted = shootRay( refr, depth - 1 );
+			refracted = shootRay( refr, depth - 1 );
 
-			color += refracted * attenuation;
+			refracted *= attenuation;
 		}
+
+		// Do we need to reflect?
+		if ( kr > 0.f )
+		{
+			Ray refl;
+			vec3 reflDir = r.direction - 2.f * r.direction.dot( closestHit.normal ) * closestHit.normal;
+			refl.origin = closestHit.coordinates + ( REFLECTIONBIAS * reflDir );
+			refl.direction = reflDir;
+
+			reflected = shootRay( refl, depth - 1 );
+		}
+
+		color = reflected * kr + refracted * ( 1 - kr );
 	}
 	// Not refractive or reflective, or we've reached the end of the allowed depth
 	else
@@ -243,18 +301,6 @@ vec3 Renderer::shadowRay( const Hit &h, const Light *l ) const
 	else
 	{
 		return vec3();
-	}
-}
-
-inline void clampFloat( float &val, float lo, float hi )
-{
-	if ( val > hi )
-	{
-		val = hi;
-	}
-	else if ( val < lo )
-	{
-		val = lo;
 	}
 }
 
