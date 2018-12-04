@@ -20,19 +20,19 @@ void Game::Init()
 	mat.type = MaterialType::MIRROR_MAT;
 	mat.spec = 0.25f;
 	mat.color = vec3( 0.5f, 0.75f, 0.5f );
-	prims[0] = new Plane( vec3( 0.f, 5.f, 0.f ), vec3( 0.f, -1.f, 0.f ), mat );
+	prims[0] = new Plane( vec3( 0.f, 2.5f, 0.f ), vec3( 0.f, -1.f, 0.f ), mat );
 	//prims[0] = new Sphere( vec3( 0.f, 1002.f, 0.f ), 1000.f, mat );
 
 	// Back wall
 	mat.type = MaterialType::DIFFUSE_MAT;
 	mat.color = vec3( 1.f, 0.5f, 0.5f );
-	prims[1] = new Plane( vec3( 0.f, 0.f, 5.f ), vec3( 0.f, 0.f, -1.f ), mat );
+	prims[1] = new Plane( vec3( 0.f, 0.f, 5.0f ), vec3( 0.f, 0.f, -1.f ), mat );
 	//prims[1] = new Sphere( vec3( 0.f, 0.f, 1005.f ), 1000.f, mat );
 
 	// Glass Sphere
 	Material glassMat;
 	glassMat.type = MaterialType::GLASS_MAT;
-	glassMat.color = vec3( 0.7f, 0.7f, 0.7f );
+	glassMat.color = vec3( 0.35f, 0.7f, 0.35f );
 	glassMat.spec = 1.f;
 	glassMat.refractionIndex = 1.5f;
 	glassMat.attenuation = 2.5f;
@@ -83,10 +83,10 @@ void Game::Init()
 	Light *l = new Light();
 	l->type = LightType::POINT_LIGHT;
 	l->color = vec3( 1.f, 1.f, 1.f );
-	l->intensity = 100.f;
+	l->intensity = 25.f;
 	l->fov = 1.f;
 	l->direction = vec3( 0.f, 1.f, 1.f );
-	l->origin = vec3( 0.f, -10.f, 4.f );
+	l->origin = vec3( 0.f, -5.f, 2.5f );
 	lights[0] = l;
 
 	// Create point light

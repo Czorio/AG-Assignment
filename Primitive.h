@@ -133,7 +133,7 @@ struct Plane : public Primitive
 
 		float denom = dot( normal, ray.direction );
 
-		if ( abs( denom ) > 0.0004f )
+		if ( abs( denom ) > EPSILON )
 		{
 			vec3 p0_O = origin - ray.origin; // vector from ray origin to plane origin (point p0)
 			float t = dot( p0_O, normal ) / denom;
