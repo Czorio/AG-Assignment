@@ -9,14 +9,15 @@
 
 #define SCRWIDTH 512
 #define SCRHEIGHT 512
-#define TILESIZE 8
+#define TILESIZE 16
 
-#define MAXDEPTH 16
+#define MAXDEPTH 4
 #define	SAMPLES 1
 
-#define SHADOWBIAS 0.0004f
-#define REFLECTIONBIAS 0.0004f
-#define REFRACTIONBIAS 0.0004f
+#define SHADOWBIAS 0.001f
+#define REFLECTIONBIAS 0.001f
+#define REFRACTIONBIAS 0.001f
+#define EPSILON 0.001f
 
 #define AMBIENTLIGHT 0.f
 

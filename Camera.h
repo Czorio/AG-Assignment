@@ -43,6 +43,11 @@ class Camera
 		p2 += v;
 	}
 
+	void rotate(float x, float y)
+	{
+
+	}
+
   private:
 	vec3 P( float u, float v ) const
 	{
