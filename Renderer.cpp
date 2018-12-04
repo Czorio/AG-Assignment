@@ -121,7 +121,7 @@ inline void clampFloat( float &val, float lo, float hi )
 }
 
 // Code adapted from Scratchapixel
-void calcFresnel( const vec3 &rayDir, const vec3 &normal, const float &refractiveIndex, float &kr )
+inline void calcFresnel( const vec3 &rayDir, const vec3 &normal, const float &refractiveIndex, float &kr )
 {
 	float cosI = -1 * normal.dot( rayDir );
 	float etaI = 1;
@@ -147,6 +147,32 @@ void calcFresnel( const vec3 &rayDir, const vec3 &normal, const float &refractiv
 
 		kr = ( Rs * Rs + Rp * Rp ) / 2;
 	}
+}
+
+Ray getReflectedRay( const vec3 &incoming, const vec3 &normal, const vec3 &hitLocation )
+{
+	Ray r;
+	vec3 outgoing = incoming - 2.f * incoming.dot( normal ) * normal;
+	r.origin = hitLocation + ( REFLECTIONBIAS * outgoing );
+	r.direction = outgoing;
+
+	return r;
+}
+
+Ray getRefractedRay( const float &n1, const float &n2, const vec3 &normal, const vec3 &incoming, const vec3 &hitLocation )
+{
+	float n = n1 / n2;
+	// If we hit from inside, flip the normal
+	float cosI = -1 * normal.dot( incoming );
+	float cosT2 = 1.f - ( n * n ) * ( 1.f - ( cosI * cosI ) );
+
+	Ray r;
+	vec3 refractedDirection = ( n * incoming ) + ( n * cosI - sqrtf( cosT2 ) ) * normal;
+	refractedDirection.normalize();
+	r.origin = hitLocation + ( REFRACTIONBIAS * refractedDirection );
+	r.direction = refractedDirection;
+
+	return r;
 }
 
 vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
@@ -186,10 +212,7 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 	// Reflection
 	if ( depth > 0 && closestHit.mat.type == MaterialType::MIRROR_MAT )
 	{
-		Ray refl;
-		vec3 reflDir = r.direction - 2.f * r.direction.dot( closestHit.normal ) * closestHit.normal;
-		refl.origin = closestHit.coordinates + ( REFLECTIONBIAS * reflDir );
-		refl.direction = reflDir;
+		Ray refl = getReflectedRay( r.direction, closestHit.normal, closestHit.coordinates );
 
 		vec3 specular = shootRay( refl, depth - 1 );
 		color = ( closestHit.mat.color * lightIntensity ) * ( 1.f - closestHit.mat.spec );
@@ -202,22 +225,13 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 		vec3 refracted = vec3();
 		vec3 reflected = vec3();
 		float kr = 0.f;
-		calcFresnel( r.direction, closestHit.normal, closestHit.mat.refractionIndex, kr );
+		// Not sure why, but the -1.f factor for the normal seems to make the fresnel work better
+		calcFresnel( r.direction, -1.f * closestHit.normal * closestHit.hitType, closestHit.mat.refractionIndex, kr );
 
 		// Do we need to refract?
 		if ( kr < 1.f )
 		{
-			float n = r.refractionIndex / closestHit.mat.refractionIndex;
-			// If we hit from inside, flip the normal
-			vec3 normal = closestHit.normal * closestHit.hitType;
-			float cosI = -1 * normal.dot( r.direction );
-			float cosT2 = 1.f - ( n * n ) * ( 1.f - ( cosI * cosI ) );
-
-			Ray refr;
-			vec3 refractedDirection = ( n * r.direction ) + ( n * cosI - sqrtf( cosT2 ) ) * normal;
-			refractedDirection.normalize();
-			refr.origin = closestHit.coordinates + ( REFRACTIONBIAS * refractedDirection );
-			refr.direction = refractedDirection;
+			Ray refr = getRefractedRay( r.refractionIndex, closestHit.mat.refractionIndex, closestHit.normal * closestHit.hitType, r.direction, closestHit.coordinates );
 
 			vec3 attenuation = vec3( 1.f, 1.f, 1.f );
 			if ( closestHit.hitType == -1 )
@@ -238,10 +252,7 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 		// Do we need to reflect?
 		if ( kr > 0.f )
 		{
-			Ray refl;
-			vec3 reflDir = r.direction - 2.f * r.direction.dot( closestHit.normal ) * closestHit.normal;
-			refl.origin = closestHit.coordinates + ( REFLECTIONBIAS * reflDir );
-			refl.direction = reflDir;
+			Ray refl = getReflectedRay( r.direction, closestHit.normal, closestHit.coordinates );
 
 			reflected = shootRay( refl, depth - 1 );
 		}
@@ -268,7 +279,8 @@ vec3 Renderer::shadowRay( const Hit &h, const Light *l ) const
 	if ( l->type == LightType::DIRECTIONAL_LIGHT )
 	{
 		dist = FLT_MAX;
-		dir = -1 * l->direction;
+		dir = -1.f * l->direction;
+		dir.normalize();
 		inverseSquare = 1.f;
 		intensity = l->intensity;
 	}
@@ -288,24 +300,28 @@ vec3 Renderer::shadowRay( const Hit &h, const Light *l ) const
 		dist = dir.length();
 		dir.normalize();
 		inverseSquare = 1 / ( dist * dist );
-	}
-
-	shadowRay.direction = dir;
-	// Shadow bias
-	shadowRay.origin = h.coordinates + ( SHADOWBIAS * dir );
-
-	for ( Primitive *prim : primitives )
-	{
-		if ( prim->hit( shadowRay ).hitType != 0 )
-		{
-			return vec3();
-		}
+		intensity = l->intensity;
 	}
 
 	float dot = h.normal.dot( dir );
 	if ( dot > 0 )
 	{
-		return l->color * intensity * dot * inverseSquare;
+		shadowRay.direction = dir;
+		shadowRay.origin = h.coordinates + ( SHADOWBIAS * dir );
+
+		Hit shdw;
+
+		for ( Primitive *prim : primitives )
+		{
+			shdw = prim->hit( shadowRay );
+			// See if the distance of the light is less than the closest physical hit
+			if ( shdw.hitType != 0 && shdw.t < dist )
+			{
+				return vec3();
+			}
+		}
+
+		return l->color * dot * intensity * inverseSquare;
 	}
 	else
 	{
