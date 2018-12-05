@@ -79,24 +79,22 @@ void Game::Init()
 	mat.color = vec3( 0.67f, 0.67f, 1.f );
 	prims[11] = new Sphere( vec3( 1.f, 1.f, 4.f ), .5f, mat );
 
-	// Create "sun"
 	Light *l = new Light();
-	l->type = LightType::POINT_LIGHT;
-	l->color = vec3( 1.f, 1.f, 1.f );
+	l->type = LightType::SPOT_LIGHT;
+	l->color = vec3( 0.f, 1.f, 1.f );
 	l->intensity = 25.f;
-	l->fov = 1.f;
-	l->direction = vec3( 0.f, 1.f, 1.f );
-	l->origin = vec3( 0.f, -5.f, 2.5f );
+	l->fov = PI / 16;
+	l->direction = vec3( 1.f, 1.f, 1.f );
+	l->origin = vec3( -2.f, -5.f, 0.f );
 	lights[0] = l;
 
-	// Create point light
 	Light *l2 = new Light();
-	l2->type = LightType::POINT_LIGHT;
-	l2->color = vec3( 1.f, 1.f, 1.f );
-	l2->intensity = 0.f;
-	l2->direction = vec3( 0.f, 1.f, 1.f );
-	l2->direction.normalize();
-	l2->origin = vec3( 0.f, -2.f, 1.f );
+	l2->type = LightType::SPOT_LIGHT;
+	l2->color = vec3( 1.f, 1.f, 0.f );
+	l2->intensity = 25.f;
+	l2->fov = PI / 16;
+	l2->direction = vec3( -1.f, 1.f, 1.f );
+	l2->origin = vec3( 2.f, -5.f, 0.f );
 	lights[1] = l2;
 
 	renderer = new Renderer();
