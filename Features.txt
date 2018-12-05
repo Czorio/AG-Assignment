@@ -1,0 +1,39 @@
+Passing grade requirements:
+-	Generic and extensible RT
+-	Free Camera
+-	Controls to move camera
+-	Basic UI
+	-	Shows FPS
+	-	Shows controls
+-	Supports planes and spheres
+-	Basic Material class
+-	Basic Scene
+
+Additional Points:
+-	Texturing using bmp
+-	Directional Lights
+-	Spotlight
+-	Snell
+-	Fresnel
+-	Beer
+-	Multithreaded
+	-	16x16 Tiles
+	-	OpenMP
+-	Optimized
+	-	Maybe? No clue what the fps will be.
+	-	Will probably go below 20 fps when close to the glass sphere
+
+Missing:
+-	Triangle meshes
+-	Complex primitives
+
+Plagiarism:
+Some code has been adapted from:
+-	Scratchapixel
+	-	The fresnel calculation
+	-	Plane-Ray intersection
+-	Hillsoft
+	-	Camera basic code
+-	Stack Overflow
+	-	Small elements across the codebase that were broken
+	-	Rotation of vector around arbitrary axis
