@@ -14,7 +14,7 @@ Passing grade requirements:
 	-	Shows FPS
 	-	Shows controls
 -	Supports planes (Konstantinos) and spheres (Mathijs)
--	Basic Material class <- Mathijs
+-	Basic Material class <- Mathijs + Konstantinos for textures
 -	Basic Scene <- Both
 
 Additional Points:
