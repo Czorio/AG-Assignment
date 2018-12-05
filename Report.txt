@@ -2,25 +2,29 @@ Made by:
 Mathijs de Boer (5686857)
 Konstantinos Ntatsis (6591884)
 
+Notes about division of work:
+Konstantinos has little experience with C++, and no prior experience with graphics.
+The apparent imbalance in division is more due to the relative speed between how fast we implement new features.
+
 Passing grade requirements:
--	Generic and extensible RT
--	Free Camera
--	Controls to move camera
--	Basic UI
+-	Generic and extensible RT <- Both
+-	Free Camera <- Mathijs
+-	Controls to move camera <- Mathijs
+-	Basic UI <- Mathijs
 	-	Shows FPS
 	-	Shows controls
--	Supports planes and spheres
--	Basic Material class
--	Basic Scene
+-	Supports planes (Konstantinos) and spheres (Mathijs)
+-	Basic Material class <- Mathijs
+-	Basic Scene <- Both
 
 Additional Points:
--	Texturing using bmp
--	Directional Lights
--	Spotlight
--	Snell
--	Fresnel
--	Beer
--	Multithreaded
+-	Texturing using bmp <- Konstantinos
+-	Directional Lights <- Mathijs
+-	Spotlight <- Mathijs
+-	Snell <- Mathijs
+-	Fresnel <- Mathijs
+-	Beer <- Mathijs
+-	Multithreaded <- Mathijs
 	-	16x16 Tiles
 	-	OpenMP
 -	Optimized
