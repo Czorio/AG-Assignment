@@ -132,6 +132,8 @@ bool rotLeft = false;
 bool rotRight = false;
 bool rotUp = false;
 bool rotDown = false;
+bool rotCW = false;
+bool rotCCW = false;
 
 // -----------------------------------------------------------
 // Main application tick function
@@ -171,12 +173,12 @@ void Game::Tick( float deltaTime )
 
 	if ( rotLeft )
 	{
-		renderer->getCamera()->rotate( vec3( -0.05f, 0.f, 0.f ) );
+		renderer->getCamera()->rotate( vec3( 0.05f, 0.f, 0.f ) );
 	}
 
 	if ( rotRight )
 	{
-		renderer->getCamera()->rotate( vec3( 0.05f, 0.f, 0.f ) );
+		renderer->getCamera()->rotate( vec3( -0.05f, 0.f, 0.f ) );
 	}
 
 	if ( rotUp )
@@ -187,6 +189,16 @@ void Game::Tick( float deltaTime )
 	if ( rotDown )
 	{
 		renderer->getCamera()->rotate( vec3( 0.f, 0.05f, 0.f ) );
+	}
+
+	if ( rotCW )
+	{
+		renderer->getCamera()->rotate( vec3( 0.f, 0.f, 0.05f ) );
+	}
+
+	if ( rotCCW )
+	{
+		renderer->getCamera()->rotate( vec3( 0.f, 0.f, -0.05f ) );
 	}
 
 	// clear the graphics window
@@ -207,16 +219,23 @@ void Game::Tick( float deltaTime )
 	}
 	else
 	{
-		screen->Print( "W - Move forward\nS - Move back\nA - Move left\nD - Move right\n", 2, 10, 0xFFFFFF );
-		screen->Print( "Space - Move up\nLeft Ctrl - Move down\n Move mouse to rotate camera\n", 2, 18, 0xFFFFFF );
+		screen->Print( "W - Move forward\n", 2, 10, 0xFFFFFF );
+		screen->Print( "S - Move back\n", 2, 18, 0xFFFFFF );
+		screen->Print( "A - Move left\n", 2, 26, 0xFFFFFF );
+		screen->Print( "D - Move right\n", 2, 34, 0xFFFFFF );
+		screen->Print( "Q - Rotate counter clock wise\n", 2, 42, 0xFFFFFF );
+		screen->Print( "E - Rotate clock wise\n", 2, 50, 0xFFFFFF );
+		screen->Print( "Space - Move up\n", 2, 58, 0xFFFFFF );
+		screen->Print( "Left Ctrl - Move down\n", 2, 66, 0xFFFFFF );
+		screen->Print( "Move mouse or use the arrow keys to rotate camera\n", 2, 74, 0xFFFFFF );
 	}
 }
 
-float rot_speed = 0.005f;
+constexpr float rot_speed = 0.005f;
 
 void Tmpl8::Game::MouseMove( int x, int y )
 {
-	renderer->getCamera()->rotate( vec3( x * rot_speed, y * rot_speed, 0.f ) );
+	renderer->getCamera()->rotate( vec3( -x * rot_speed, y * rot_speed, 0.f ) );
 }
 
 void Tmpl8::Game::KeyUp( int key )
@@ -253,6 +272,12 @@ void Tmpl8::Game::KeyUp( int key )
 	case SDL_SCANCODE_DOWN:
 		rotDown = false;
 		break;
+	case SDL_SCANCODE_Q:
+		rotCCW = false;
+		break;
+	case SDL_SCANCODE_E:
+		rotCW = false;
+		break;
 	default:
 		break;
 	}
@@ -282,6 +307,7 @@ void Tmpl8::Game::KeyDown( int key )
 		break;
 	case SDL_SCANCODE_H:
 		showHelp = !showHelp;
+		break;
 	case SDL_SCANCODE_LEFT:
 		rotLeft = true;
 		break;
@@ -293,6 +319,12 @@ void Tmpl8::Game::KeyDown( int key )
 		break;
 	case SDL_SCANCODE_DOWN:
 		rotDown = true;
+		break;
+	case SDL_SCANCODE_Q:
+		rotCCW = true;
+		break;
+	case SDL_SCANCODE_E:
+		rotCW = true;
 		break;
 	default:
 		break;

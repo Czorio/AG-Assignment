@@ -38,6 +38,7 @@ class Camera
 		return r;
 	}
 
+	// Own code
 	void move( vec3 v )
 	{
 		origin += ( right * v.x + up * v.y + forward * v.z );
@@ -54,18 +55,14 @@ class Camera
 		return rotated;
 	}
 
-	vec3 x_axis = vec3( 1.f, 0.f, 0.f );
-	vec3 y_axis = vec3( 0.f, 1.f, 0.f );
-	vec3 z_axis = vec3( 0.f, 0.f, 1.f );
-
+	// Own code
 	void rotate( vec3 v )
 	{
-		// Had to flip the x/y with their axes to make x motion rotate around y
-		vec3 new_forward = rotateVec( forward, y_axis, v.x );
-		new_forward = rotateVec( new_forward, x_axis, -v.y );
+		vec3 new_forward = rotateVec( forward, up, v.x ); // Left/Right
+		new_forward = rotateVec( new_forward, right, -v.y ); // Up/Down
 
-		forward = new_forward;
-		right = forward.cross( up ).normalized();
+		forward = new_forward.normalized();
+		right = forward.cross( rotateVec( up, forward, v.z ) ).normalized(); // Roll
 		up = right.cross( forward );
 	}
 };

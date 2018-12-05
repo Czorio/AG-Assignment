@@ -1,3 +1,7 @@
+Made by:
+Mathijs de Boer (5686857)
+Konstantinos Ntatsis (6591884)
+
 Passing grade requirements:
 -	Generic and extensible RT
 -	Free Camera

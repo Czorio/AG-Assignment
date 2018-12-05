@@ -58,6 +58,6 @@
     <Text Include="_readme.txt">
       <Filter>template code</Filter>
     </Text>
-    <Text Include="Features.txt" />
+    <Text Include="Report.txt" />
   </ItemGroup>
 </Project>
