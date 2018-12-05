@@ -1,20 +1,28 @@
 #pragma once
+
+// Based on https://github.com/Hillsoft/Raytracer-Tutorial
 class Camera
 {
   public:
 	vec3 origin;
-	vec3 direction;
-	vec3 screenCenter;
-	vec3 p0, p1, p2;
 
-	Camera() : origin( vec3() ), direction( vec3() ), screenCenter( vec3() ), p0( vec3() ), p1( vec3() ), p2( vec3() ) {}
+	vec3 forward;
+	vec3 up;
+	vec3 right;
 
-	Camera( vec3 origin, vec3 direction, float fov, float aspect ) : origin( origin ), direction( direction )
+	float width;
+	float height;
+
+	Camera() : origin( vec3() ), forward( vec3() ), up( vec3() ), right( vec3() ) {}
+
+	Camera( vec3 origin, vec3 target, vec3 upGuide, float fov, float aspect ) : origin( origin )
 	{
-		screenCenter = origin + fov * direction;
-		p0 = screenCenter + vec3( -1 * aspect, -1, 0 );
-		p1 = screenCenter + vec3( 1 * aspect, -1, 0 );
-		p2 = screenCenter + vec3( -1 * aspect, 1, 0 );
+		forward = ( target - origin ).normalized();
+		right = forward.cross( upGuide ).normalized();
+		up = right.cross( forward );
+
+		height = tan( fov );
+		width = height * aspect;
 	}
 
 	Ray getRay( unsigned x, unsigned y ) const
@@ -22,35 +30,39 @@ class Camera
 		Ray r;
 		r.origin = origin;
 
-		// Convert screenspace to UV
-		float u = float( x ) / SCRWIDTH;
-		float v = float( y ) / SCRHEIGHT;
+		float norm_x = ( 2.0f * x ) / SCRWIDTH - 1.0f;
+		float norm_y = ( -2.0f * y ) / SCRHEIGHT + 1.0f;
 
-		vec3 direction = ( P( u, v ) - origin );
-		float length = direction.length();
-		direction *= 1 / length;
-		r.direction = direction;
+		r.direction = ( forward + norm_x * width * right + norm_y * height * up ).normalized();
 
 		return r;
 	}
 
+	// Own code
 	void move( vec3 v )
 	{
-		origin += v;
-		screenCenter += v;
-		p0 += v;
-		p1 += v;
-		p2 += v;
+		origin += ( right * v.x + up * v.y + forward * v.z );
 	}
 
-	void rotate(float x, float y)
+	// Stack overflow: https://stackoverflow.com/questions/42421611/3d-vector-rotation-in-c
+	vec3 rotateVec( const vec3 &v, const vec3 &axis, float angle )
 	{
+		float cos_angle = cos( angle );
+		float sin_angle = sin( angle );
 
+		vec3 rotated = ( v * cos_angle ) + ( axis.cross( v ) * sin_angle ) + ( axis * axis.dot( v ) ) * ( 1 - cos_angle );
+
+		return rotated;
 	}
 
-  private:
-	vec3 P( float u, float v ) const
+	// Own code
+	void rotate( vec3 v )
 	{
-		return p0 + u * ( p1 - p0 ) + v * ( p2 - p0 );
+		vec3 new_forward = rotateVec( forward, up, v.x ); // Left/Right
+		new_forward = rotateVec( new_forward, right, -v.y ); // Up/Down
+
+		forward = new_forward.normalized();
+		right = forward.cross( rotateVec( up, forward, v.z ) ).normalized(); // Roll
+		up = right.cross( forward );
 	}
 };
