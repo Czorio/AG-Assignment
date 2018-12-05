@@ -5,6 +5,7 @@ Konstantinos Ntatsis (6591884)
 Notes about division of work:
 Konstantinos has little experience with C++, and no prior experience with graphics.
 The apparent imbalance in division is more due to the relative speed between how fast we implement new features.
+Another note, the texture code only works on Konstantinos' PC. As we cannot confirm that the code is correct, we did not include it in this version of the project
 
 Passing grade requirements:
 -	Generic and extensible RT <- Both
