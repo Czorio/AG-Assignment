@@ -68,6 +68,9 @@ struct Sphere : public Primitive
 				h.hitType = 1;
 			}
 
+			h.u = 0.5f + atan2( normal.y, normal.x ) / 2 * PI;
+			h.v = 0.5f - asin( normal.y ) / PI;
+
 			return h;
 		}
 		else // Two hits
@@ -88,6 +91,9 @@ struct Sphere : public Primitive
 				normal.normalize();
 				h.normal = normal;
 
+				h.u = 0.5f + atan2( normal.y, normal.x ) / 2 * PI;
+				h.v = 0.5f - asin( normal.y ) / PI;
+
 				return h;
 			}
 			else if ( t1 < 0 && t2 > 0 )
@@ -102,6 +108,9 @@ struct Sphere : public Primitive
 				vec3 normal = h.coordinates - origin;
 				normal.normalize();
 				h.normal = normal;
+
+				h.u = 0.5f + atan2( normal.y, normal.x ) / 2 * PI;
+				h.v = 0.5f - asin( normal.y ) / PI;
 
 				return h;
 			}

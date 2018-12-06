@@ -1,17 +1,5 @@
 #include "precomp.h"
 
-// Makes converting from RGB to a Pixel easy
-union Color {
-	Pixel pixel;
-	struct
-	{
-		Pixel b : 8;
-		Pixel g : 8;
-		Pixel r : 8;
-		Pixel a : 8;
-	} c;
-};
-
 Renderer::Renderer()
 {
 	threads = vector<thread>( thread::hardware_concurrency() );
@@ -215,7 +203,7 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 		Ray refl = getReflectedRay( r.direction, closestHit.normal, closestHit.coordinates );
 
 		vec3 specular = shootRay( refl, depth - 1 );
-		color = ( closestHit.mat.color * lightIntensity ) * ( 1.f - closestHit.mat.spec );
+		color = ( closestHit.mat.getDiffuse( closestHit.u, closestHit.v ) * lightIntensity ) * ( 1.f - closestHit.mat.spec );
 		specular *= closestHit.mat.spec;
 		color += specular;
 	}
@@ -262,7 +250,7 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 	// Not refractive or reflective, or we've reached the end of the allowed depth
 	else
 	{
-		color = closestHit.mat.color * lightIntensity;
+		color = closestHit.mat.getDiffuse(closestHit.u, closestHit.v) * lightIntensity;
 	}
 
 	return color;

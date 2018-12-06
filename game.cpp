@@ -31,11 +31,12 @@ void Game::Init()
 
 	// Glass Sphere
 	Material glassMat;
-	glassMat.type = MaterialType::GLASS_MAT;
+	glassMat.type = MaterialType::MIRROR_MAT;
 	glassMat.color = vec3( 0.35f, 0.7f, 0.35f );
-	glassMat.spec = 1.f;
+	glassMat.spec = 0.5f;
 	glassMat.refractionIndex = 1.5f;
 	glassMat.attenuation = 2.5f;
+	glassMat.loadDiffuse( "Texture.bmp" );
 	prims[2] = new Sphere( vec3( 0.f, 0.f, 0.f ), .5f, glassMat );
 
 	// 3x3 grid of spheres
