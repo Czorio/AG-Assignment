@@ -38,7 +38,7 @@ struct Material
 		{
 			Color converter;
 			vec3 color = vec3();
-			
+
 			converter.pixel = buffer[i];
 
 			color.x = (float)converter.c.r / 255.f;
@@ -57,8 +57,9 @@ struct Material
 	{
 		if ( hasTexture )
 		{
-			int x = u * diffuse->width;
-			int y = v * diffuse->height;
+
+			int x = int( u * diffuse->width ) % diffuse->width;
+			int y = int( v * diffuse->height ) % diffuse->height;
 			return diffuse->values[y * diffuse->width + x];
 		}
 		else

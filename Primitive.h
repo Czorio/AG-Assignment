@@ -154,6 +154,12 @@ struct Plane : public Primitive
 				P.coordinates = ray( t );
 				P.mat = mat;
 				P.normal = normal;
+
+				vec3 u = vec3( normal.y, -normal.x, 0 ).normalized();
+				vec3 v = normal.cross( u );
+
+				P.u = u.dot( P.coordinates );
+				P.v = v.dot( P.coordinates );
 			}
 		}
 		return P;
