@@ -159,7 +159,7 @@ struct Plane : public Primitive
 				h.normal = normal;
 
 				// Calculate UV coordinates for the texture
-				vec3 u = vec3( normal.y, -normal.x, 0 ).normalized();
+				vec3 u = primaryTextureDirection( normal );
 				vec3 v = normal.cross( u );
 
 				h.u = u.dot( h.coordinates );
@@ -167,5 +167,20 @@ struct Plane : public Primitive
 			}
 		}
 		return h;
+	}
+
+  private:
+	// I asked a question on StackOverflow for this one
+	// https://computergraphics.stackexchange.com/questions/8382/how-do-i-convert-a-hit-on-an-infinite-plane-to-uv-coordinates-for-texturing-in-a
+	vec3 primaryTextureDirection( vec3 normal ) const
+	{
+		vec3 a = cross( normal, vec3( 1, 0, 0 ) );
+		vec3 b = cross( normal, vec3( 0, 1, 0 ) );
+
+		vec3 max_ab = dot( a, a ) < dot( b, b ) ? b : a;
+
+		vec3 c = cross( normal, vec3( 0, 0, 1 ) );
+
+		return normalize( dot( max_ab, max_ab ) < dot( c, c ) ? c : max_ab );
 	}
 };
