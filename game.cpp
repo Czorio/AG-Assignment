@@ -22,14 +22,13 @@ void Game::Init()
 	floorMat.spec = 0.25f;
 	floorMat.color = vec3( 0.25f, 0.25f, 0.25f );
 	prims[0] = new Plane( vec3( 0.f, 2.5f, 0.f ), vec3( 0.f, -1.f, 0.f ), floorMat );
-	//prims[0] = new Sphere( vec3( 0.f, 1002.f, 0.f ), 1000.f, mat );
 
 	// Back wall
 	Material mat;
+	mat.loadDiffuse( "Texture.bmp" );
 	mat.type = MaterialType::DIFFUSE_MAT;
-	mat.color = vec3( 0.75f, 0.75f, 0.75f );
+	mat.color = vec3( 0.75f, 0.75f, 0.0f );
 	prims[1] = new Plane( vec3( 0.f, 0.f, 5.0f ), vec3( 0.f, 0.f, -1.f ), mat );
-	//prims[1] = new Sphere( vec3( 0.f, 0.f, 1005.f ), 1000.f, mat );
 
 	// Glass Sphere
 	Material glassMat;

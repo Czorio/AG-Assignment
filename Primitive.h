@@ -68,6 +68,7 @@ struct Sphere : public Primitive
 				h.hitType = 1;
 			}
 
+			// Calculate UV coordinates for the texture
 			h.u = 0.5f + atan2( normal.y, normal.x ) / 2 * PI;
 			h.v = 0.5f - asin( normal.y ) / PI;
 
@@ -91,6 +92,7 @@ struct Sphere : public Primitive
 				normal.normalize();
 				h.normal = normal;
 
+				// Calculate UV coordinates for the texture
 				h.u = 0.5f + atan2( normal.y, normal.x ) / 2 * PI;
 				h.v = 0.5f - asin( normal.y ) / PI;
 
@@ -109,6 +111,7 @@ struct Sphere : public Primitive
 				normal.normalize();
 				h.normal = normal;
 
+				// Calculate UV coordinates for the texture
 				h.u = 0.5f + atan2( normal.y, normal.x ) / 2 * PI;
 				h.v = 0.5f - asin( normal.y ) / PI;
 
@@ -135,10 +138,10 @@ struct Plane : public Primitive
 
 	Hit hit( const Ray &ray ) const override
 	{
-		Hit P;
+		Hit h;
 		vec3 normal = n; // so that it can be normalized
 		normal.normalize();
-		P.hitType = 0;
+		h.hitType = 0;
 
 		float denom = dot( normal, ray.direction );
 
@@ -149,19 +152,20 @@ struct Plane : public Primitive
 
 			if ( t >= 0 )
 			{
-				P.hitType = 1;
-				P.t = t;
-				P.coordinates = ray( t );
-				P.mat = mat;
-				P.normal = normal;
+				h.hitType = 1;
+				h.t = t;
+				h.coordinates = ray( t );
+				h.mat = mat;
+				h.normal = normal;
 
+				// Calculate UV coordinates for the texture
 				vec3 u = vec3( normal.y, -normal.x, 0 ).normalized();
 				vec3 v = normal.cross( u );
 
-				P.u = u.dot( P.coordinates );
-				P.v = v.dot( P.coordinates );
+				h.u = u.dot( h.coordinates );
+				h.v = v.dot( h.coordinates );
 			}
 		}
-		return P;
+		return h;
 	}
 };
