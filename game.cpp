@@ -16,26 +16,28 @@ void Game::Init()
 	vector<Light *> lights = vector<Light *>( noLights );
 
 	// Base plane
-	Material mat;
-	mat.type = MaterialType::MIRROR_MAT;
-	mat.spec = 0.25f;
-	mat.color = vec3( 0.25f, 0.25f, 0.25f );
-	prims[0] = new Plane( vec3( 0.f, 2.5f, 0.f ), vec3( 0.f, -1.f, 0.f ), mat );
-	//prims[0] = new Sphere( vec3( 0.f, 1002.f, 0.f ), 1000.f, mat );
+	Material floorMat;
+	floorMat.type = MaterialType::MIRROR_MAT;
+	floorMat.loadDiffuse( "test_b_check.jpg" );
+	floorMat.spec = 0.25f;
+	floorMat.color = vec3( 0.25f, 0.25f, 0.25f );
+	prims[0] = new Plane( vec3( 0.f, 2.5f, 0.f ), vec3( 0.f, -1.f, 0.f ), floorMat );
 
 	// Back wall
+	Material mat;
+	mat.loadDiffuse( "Texture.bmp" );
 	mat.type = MaterialType::DIFFUSE_MAT;
-	mat.color = vec3( 0.75f, 0.75f, 0.75f );
+	mat.color = vec3( 0.75f, 0.75f, 0.0f );
 	prims[1] = new Plane( vec3( 0.f, 0.f, 5.0f ), vec3( 0.f, 0.f, -1.f ), mat );
-	//prims[1] = new Sphere( vec3( 0.f, 0.f, 1005.f ), 1000.f, mat );
 
 	// Glass Sphere
 	Material glassMat;
-	glassMat.type = MaterialType::GLASS_MAT;
+	glassMat.type = MaterialType::MIRROR_MAT;
 	glassMat.color = vec3( 0.35f, 0.7f, 0.35f );
-	glassMat.spec = 1.f;
+	glassMat.spec = 0.5f;
 	glassMat.refractionIndex = 1.5f;
 	glassMat.attenuation = 2.5f;
+	glassMat.loadDiffuse( "Texture.bmp" );
 	prims[2] = new Sphere( vec3( 0.f, 0.f, 0.f ), .5f, glassMat );
 
 	// 3x3 grid of spheres
@@ -173,32 +175,32 @@ void Game::Tick( float deltaTime )
 
 	if ( rotLeft )
 	{
-		renderer->getCamera()->rotate( vec3( 0.05f, 0.f, 0.f ) );
+		renderer->rotateCam( vec3( 0.05f, 0.f, 0.f ) );
 	}
 
 	if ( rotRight )
 	{
-		renderer->getCamera()->rotate( vec3( -0.05f, 0.f, 0.f ) );
+		renderer->rotateCam( vec3( -0.05f, 0.f, 0.f ) );
 	}
 
 	if ( rotUp )
 	{
-		renderer->getCamera()->rotate( vec3( 0.f, -0.05f, 0.f ) );
+		renderer->rotateCam( vec3( 0.f, -0.05f, 0.f ) );
 	}
 
 	if ( rotDown )
 	{
-		renderer->getCamera()->rotate( vec3( 0.f, 0.05f, 0.f ) );
+		renderer->rotateCam( vec3( 0.f, 0.05f, 0.f ) );
 	}
 
 	if ( rotCW )
 	{
-		renderer->getCamera()->rotate( vec3( 0.f, 0.f, 0.05f ) );
+		renderer->rotateCam( vec3( 0.f, 0.f, 0.05f ) );
 	}
 
 	if ( rotCCW )
 	{
-		renderer->getCamera()->rotate( vec3( 0.f, 0.f, -0.05f ) );
+		renderer->rotateCam( vec3( 0.f, 0.f, -0.05f ) );
 	}
 
 	// clear the graphics window
