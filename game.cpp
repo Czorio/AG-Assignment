@@ -175,32 +175,32 @@ void Game::Tick( float deltaTime )
 
 	if ( rotLeft )
 	{
-		renderer->getCamera()->rotate( vec3( 0.05f, 0.f, 0.f ) );
+		renderer->rotateCam( vec3( 0.05f, 0.f, 0.f ) );
 	}
 
 	if ( rotRight )
 	{
-		renderer->getCamera()->rotate( vec3( -0.05f, 0.f, 0.f ) );
+		renderer->rotateCam( vec3( -0.05f, 0.f, 0.f ) );
 	}
 
 	if ( rotUp )
 	{
-		renderer->getCamera()->rotate( vec3( 0.f, -0.05f, 0.f ) );
+		renderer->rotateCam( vec3( 0.f, -0.05f, 0.f ) );
 	}
 
 	if ( rotDown )
 	{
-		renderer->getCamera()->rotate( vec3( 0.f, 0.05f, 0.f ) );
+		renderer->rotateCam( vec3( 0.f, 0.05f, 0.f ) );
 	}
 
 	if ( rotCW )
 	{
-		renderer->getCamera()->rotate( vec3( 0.f, 0.f, 0.05f ) );
+		renderer->rotateCam( vec3( 0.f, 0.f, 0.05f ) );
 	}
 
 	if ( rotCCW )
 	{
-		renderer->getCamera()->rotate( vec3( 0.f, 0.f, -0.05f ) );
+		renderer->rotateCam( vec3( 0.f, 0.f, -0.05f ) );
 	}
 
 	// clear the graphics window

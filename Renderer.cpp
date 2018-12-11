@@ -2,8 +2,6 @@
 
 Renderer::Renderer()
 {
-	threads = vector<thread>( thread::hardware_concurrency() );
-
 	buffer = new Pixel[SCRWIDTH * SCRHEIGHT];
 
 	for ( unsigned y = 0; y < SCRHEIGHT; y += TILESIZE )
@@ -57,6 +55,9 @@ void Renderer::renderFrame()
 void Renderer::setPrimitives( vector<Primitive *> primitives )
 {
 	this->primitives = primitives;
+
+	bvh = BVH();
+	bvh.constructBVH( this->primitives[0] );
 }
 
 void Renderer::setLights( vector<Light *> lights )
@@ -83,6 +84,7 @@ void Renderer::moveCam( vec3 vec )
 // As preparation for iterative rendering
 void Renderer::rotateCam( vec3 vec )
 {
+	cam.rotate( vec );
 }
 
 Pixel *Renderer::getOutput()
@@ -250,7 +252,7 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 	// Not refractive or reflective, or we've reached the end of the allowed depth
 	else
 	{
-		color = closestHit.mat.getDiffuse(closestHit.u, closestHit.v) * lightIntensity;
+		color = closestHit.mat.getDiffuse( closestHit.u, closestHit.v ) * lightIntensity;
 	}
 
 	return color;

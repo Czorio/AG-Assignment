@@ -24,9 +24,10 @@ class BVH
   public:
 	BVH();
 
-	BVHNode constructBVH( Primitive *primitives )
+	void constructBVH( Primitive *primitives )
 	{
 	}
 
   private:
+	BVHNode *head;
 };
