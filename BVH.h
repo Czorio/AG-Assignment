@@ -22,7 +22,7 @@ struct BVHNode
 class BVH
 {
   public:
-	BVH();
+	BVH() {};
 
 	void constructBVH( Primitive *primitives )
 	{
