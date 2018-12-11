@@ -42,6 +42,12 @@
     <ClInclude Include="tiny_obj_loader.h">
       <Filter>Extra Libs</Filter>
     </ClInclude>
+    <ClInclude Include="BVH.h">
+      <Filter>Accelleration Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="Color.h">
+      <Filter>Whitted</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="template code">
@@ -53,10 +59,14 @@
     <Filter Include="Extra Libs">
       <UniqueIdentifier>{2defa15d-67e0-4084-9066-f49cdc7ace61}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Accelleration Structures">
+      <UniqueIdentifier>{69f0bb55-4c4f-4e4d-bd45-82e90e27d38a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="_readme.txt">
       <Filter>template code</Filter>
     </Text>
+    <Text Include="Report.txt" />
   </ItemGroup>
 </Project>

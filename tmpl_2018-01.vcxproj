@@ -148,7 +148,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BVH.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="Color.h" />
     <ClInclude Include="game.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="Material.h" />
@@ -161,6 +163,7 @@
     <ClInclude Include="tiny_obj_loader.h" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="Report.txt" />
     <Text Include="_readme.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

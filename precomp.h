@@ -81,11 +81,13 @@ using namespace std;
 
 using namespace Tmpl8;
 
+#include "Color.h"
 #include "Material.h"
 #include "Light.h"
 #include "Ray.h"
 #include "Camera.h"
 #include "Primitive.h"
+#include "BVH.h"
 #include "Renderer.h"
 
 #include "game.h"

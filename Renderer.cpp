@@ -1,21 +1,7 @@
 #include "precomp.h"
 
-// Makes converting from RGB to a Pixel easy
-union Color {
-	Pixel pixel;
-	struct
-	{
-		Pixel b : 8;
-		Pixel g : 8;
-		Pixel r : 8;
-		Pixel a : 8;
-	} c;
-};
-
 Renderer::Renderer()
 {
-	threads = vector<thread>( thread::hardware_concurrency() );
-
 	buffer = new Pixel[SCRWIDTH * SCRHEIGHT];
 
 	for ( unsigned y = 0; y < SCRHEIGHT; y += TILESIZE )
@@ -69,6 +55,9 @@ void Renderer::renderFrame()
 void Renderer::setPrimitives( vector<Primitive *> primitives )
 {
 	this->primitives = primitives;
+
+	bvh = BVH();
+	bvh.constructBVH( this->primitives[0] );
 }
 
 void Renderer::setLights( vector<Light *> lights )
@@ -95,6 +84,7 @@ void Renderer::moveCam( vec3 vec )
 // As preparation for iterative rendering
 void Renderer::rotateCam( vec3 vec )
 {
+	cam.rotate( vec );
 }
 
 Pixel *Renderer::getOutput()
@@ -215,7 +205,7 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 		Ray refl = getReflectedRay( r.direction, closestHit.normal, closestHit.coordinates );
 
 		vec3 specular = shootRay( refl, depth - 1 );
-		color = ( closestHit.mat.color * lightIntensity ) * ( 1.f - closestHit.mat.spec );
+		color = ( closestHit.mat.getDiffuse( closestHit.u, closestHit.v ) * lightIntensity ) * ( 1.f - closestHit.mat.spec );
 		specular *= closestHit.mat.spec;
 		color += specular;
 	}
@@ -262,7 +252,7 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 	// Not refractive or reflective, or we've reached the end of the allowed depth
 	else
 	{
-		color = closestHit.mat.color * lightIntensity;
+		color = closestHit.mat.getDiffuse( closestHit.u, closestHit.v ) * lightIntensity;
 	}
 
 	return color;
@@ -294,13 +284,26 @@ vec3 Renderer::shadowRay( const Hit &h, const Light *l ) const
 	}
 	else if ( l->type == LightType::SPOT_LIGHT )
 	{
-		// A spotlight is essentially a point light, but we don't register certain angles away from the light's direction
-
+		// A spotlight is essentially a point light, but we limit the response to a specific range of incoming angles
 		dir = l->origin - h.coordinates;
 		dist = dir.length();
 		dir.normalize();
-		inverseSquare = 1 / ( dist * dist );
-		intensity = l->intensity;
+
+		// The dot product of 2 vectors is the cos(theta) of  the angle, theta, between the vectors
+		// As we store the fov of the spotlight in degrees, we first calculate the cos of the fov to compare to the dot product
+		float angle = cos( l->fov );
+		// Make dir and the light direction point in roughly the same direction to calculate the angle
+		float dot = l->direction.dot( -dir );
+
+		if ( angle > dot )
+		{
+			return vec3();
+		}
+		else
+		{
+			intensity = l->intensity;
+			inverseSquare = 1 / ( dist * dist );
+		}
 	}
 
 	float dot = h.normal.dot( dir );

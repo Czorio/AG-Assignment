@@ -18,11 +18,11 @@ class Renderer
 	Pixel *getOutput();
 
   private:
-	vector<thread> threads;
 	vector<tuple<int, int>> tiles;
 
 	Camera cam;
 	vector<Primitive *> primitives;
+	BVH bvh;
 	vector<Light *> lights;
 	Pixel *buffer;
 

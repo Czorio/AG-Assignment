@@ -1,0 +1,48 @@
+Made by:
+Mathijs de Boer (5686857)
+Konstantinos Ntatsis (6591884)
+
+Notes about division of work:
+Konstantinos has little experience with C++, and no prior experience with graphics.
+The apparent imbalance in division is more due to the relative speed between how fast we implement new features.
+Another note, the texture code only works on Konstantinos' PC. As we cannot confirm that the code is correct, we did not include it in this version of the project
+
+Passing grade requirements:
+-	Generic and extensible RT <- Both
+-	Free Camera <- Mathijs
+-	Controls to move camera <- Mathijs
+-	Basic UI <- Mathijs
+	-	Shows FPS
+	-	Shows controls
+-	Supports planes (Konstantinos) and spheres (Mathijs)
+-	Basic Material class <- Mathijs + Konstantinos for textures
+-	Basic Scene <- Both
+
+Additional Points:
+-	Texturing using bmp <- Konstantinos
+-	Directional Lights <- Mathijs
+-	Spotlight <- Mathijs
+-	Snell <- Mathijs
+-	Fresnel <- Mathijs
+-	Beer <- Mathijs
+-	Multithreaded <- Mathijs
+	-	16x16 Tiles
+	-	OpenMP
+-	Optimized
+	-	Maybe? No clue what the fps will be.
+	-	Will probably go below 20 fps when close to the glass sphere
+
+Missing:
+-	Triangle meshes
+-	Complex primitives
+
+Plagiarism:
+Some code has been adapted from:
+-	Scratchapixel
+	-	The fresnel calculation
+	-	Plane-Ray intersection
+-	Hillsoft
+	-	Camera basic code
+-	Stack Overflow
+	-	Small elements across the codebase that were broken
+	-	Rotation of vector around arbitrary axis
