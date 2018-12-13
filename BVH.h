@@ -5,11 +5,11 @@ struct BVHNode
 	aabb bounds;
 	bool isLeaf;
 	BVHNode *left, *right;
-	int first, count;
+	vector<Primitive *> primitives;
 
-	void subdivide()
+	void subdivide( int currentDepth )
 	{
-		if ( count < 3 )
+		if ( primitives.size() < 3 || currentDepth >= BVHDEPTH)
 		{
 			return;
 		}
@@ -22,9 +22,26 @@ struct BVHNode
 class BVH
 {
   public:
-	BVH() {};
+	BVH(){};
 
-	void constructBVH( Primitive *primitives )
+	void constructBVH( vector<Primitive *> primitives )
+	{
+		head = new BVHNode();
+		head->bounds = aabb();
+		head->isLeaf = true;
+		head->left = nullptr;
+		head->right = nullptr;
+		head->primitives = primitives;
+
+		for ( size_t i = 0; i < head->primitives.size(); i++ )
+		{
+			head->bounds.Grow( head->primitives[i]->volume() );
+		}
+
+		head->subdivide( 0 );
+	}
+
+	Hit intersect( const Ray &r )
 	{
 	}
 

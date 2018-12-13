@@ -14,6 +14,7 @@ struct Primitive
 	Primitive( vec3 origin, Material mat ) : origin( origin ), mat( mat ) {}
 
 	virtual Hit hit( const Ray &ray ) const = 0;
+	virtual aabb volume() const = 0;
 };
 
 struct Sphere : public Primitive
@@ -129,8 +130,16 @@ struct Sphere : public Primitive
 			}
 		}
 	}
+
+	aabb volume() const override
+	{
+		aabb bounds = aabb( origin + vec3( radius, radius, radius ), origin - vec3( radius, radius, radius ) );
+		bounds.Grow( vec3( EPSILON, EPSILON, EPSILON ) );
+		return bounds;
+	}
 };
 
+// Deprecated since AABB cannot be easily determined for an infinite plane
 struct Plane : public Primitive
 {
 	vec3 n;
@@ -169,6 +178,11 @@ struct Plane : public Primitive
 		return h;
 	}
 
+	aabb volume() const override
+	{
+		return aabb();
+	}
+
   private:
 	// I asked a question on StackOverflow for this one
 	// https://computergraphics.stackexchange.com/questions/8382/how-do-i-convert-a-hit-on-an-infinite-plane-to-uv-coordinates-for-texturing-in-a
@@ -182,5 +196,94 @@ struct Plane : public Primitive
 		vec3 c = cross( normal, vec3( 0, 0, 1 ) );
 
 		return normalize( dot( max_ab, max_ab ) < dot( c, c ) ? c : max_ab );
+	}
+};
+
+struct Triangle : public Primitive
+{
+	vec3 v0, v1, v2;
+
+	Triangle( vec3 origin, Material mat, vec3 *verteces ) : Primitive( origin, mat )
+	{
+		v0 = verteces[0];
+		v1 = verteces[1];
+		v2 = verteces[2];
+	}
+
+	// Based on ScratchaPixel's implementation
+	Hit hit( const Ray &r ) const override
+	{
+		Hit h;
+		h.hitType = 0;
+
+		// compute plane's normal
+		vec3 v0v1 = v1 - v0;
+		vec3 v0v2 = v2 - v0;
+		// no need to normalize
+		vec3 N = v0v1.cross( v0v2 ); // N
+		float area2 = N.length();
+
+		// Step 1: finding P
+
+		// check if ray and plane are parallel ?
+		float NdotRayDirection = N.dot( r.direction );
+		if ( fabs( NdotRayDirection ) < EPSILON ) // almost 0
+		{
+			return h; // they are parallel so they don't intersect !
+		}
+
+		// compute d parameter
+		float d = N.dot( v0 );
+
+		// compute t (equation 3)
+		float t = ( N.dot( r.origin ) + d ) / NdotRayDirection;
+		// check if the triangle is in behind the ray
+		if ( t < 0 )
+		{
+			return h; // the triangle is behind
+		}
+
+		// compute the intersection point using equation 1
+		vec3 P = r( t );
+
+		// Step 2: inside-outside test
+		vec3 C; // vector perpendicular to triangle's plane
+
+		// edge 0
+		vec3 edge0 = v1 - v0;
+		vec3 vp0 = P - v0;
+		C = edge0.cross( vp0 );
+		if ( N.dot( C ) < 0 )
+		{
+			return h; // P is on the right side
+		}
+
+		// edge 1
+		vec3 edge1 = v2 - v1;
+		vec3 vp1 = P - v1;
+		C = edge1.cross( vp1 );
+		if ( N.dot( C ) < 0 )
+		{
+			return h; // P is on the right side
+		}
+
+		// edge 2
+		vec3 edge2 = v0 - v2;
+		vec3 vp2 = P - v2;
+		C = edge2.cross( vp2 );
+		if ( N.dot( C ) < 0 )
+		{
+			return h; // P is on the right side;
+		}
+
+		h.hitType = 1;
+		h.coordinates = P;
+		h.normal = N;
+
+		return h; // this ray hits the triangle
+	}
+
+	aabb volume() const override
+	{
 	}
 };

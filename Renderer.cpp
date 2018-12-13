@@ -44,7 +44,7 @@ void Renderer::renderFrame()
 			{
 				if ( ( x + dx ) < SCRWIDTH && ( y + dy ) < SCRHEIGHT )
 				{
-					vec3 color = shootRay( x + dx, y + dy, MAXDEPTH );
+					vec3 color = shootRay( x + dx, y + dy, MAXRAYDEPTH );
 					buffer[( y + dy ) * SCRWIDTH + ( x + dx )] = rgb( color );
 				}
 			}
@@ -57,7 +57,7 @@ void Renderer::setPrimitives( vector<Primitive *> primitives )
 	this->primitives = primitives;
 
 	bvh = BVH();
-	bvh.constructBVH( this->primitives[0] );
+	bvh.constructBVH( primitives );
 }
 
 void Renderer::setLights( vector<Light *> lights )
