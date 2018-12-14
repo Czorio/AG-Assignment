@@ -89,6 +89,7 @@ using namespace Tmpl8;
 #include "Ray.h"
 #include "Camera.h"
 #include "Primitive.h"
+#include "OBJLoader.h"
 #include "BVH.h"
 #include "Renderer.h"
 

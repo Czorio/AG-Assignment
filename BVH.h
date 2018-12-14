@@ -9,13 +9,18 @@ struct BVHNode
 
 	void subdivide( int currentDepth )
 	{
-		if ( primitives.size() < 3 || currentDepth >= BVHDEPTH)
+		if ( primitives.size() < 3 || currentDepth >= BVHDEPTH )
 		{
 			return;
 		}
 
+		int longestAxis = bounds.LongestAxis();
+		float center = bounds.Center( longestAxis );
+
 		left = new BVHNode();
+		left->subdivide( currentDepth + 1 );
 		right = new BVHNode();
+		right->subdivide( currentDepth + 1 );
 	}
 };
 

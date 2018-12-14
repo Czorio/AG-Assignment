@@ -2,16 +2,15 @@
 
 struct Primitive
 {
-	vec3 origin;
 	Material mat;
 
-	Primitive() : origin( vec3() )
+	Primitive()
 	{
 		mat.color = vec3();
 		mat.spec = 0.f;
 	}
 
-	Primitive( vec3 origin, Material mat ) : origin( origin ), mat( mat ) {}
+	Primitive( Material mat ) : mat( mat ) {}
 
 	virtual Hit hit( const Ray &ray ) const = 0;
 	virtual aabb volume() const = 0;
@@ -19,10 +18,11 @@ struct Primitive
 
 struct Sphere : public Primitive
 {
+	vec3 origin;
 	float radius;
 	float r2;
 
-	Sphere( vec3 origin, float radius, Material mat ) : Primitive( origin, mat ), radius( radius ), r2( radius * radius ) {}
+	Sphere( vec3 origin, float radius, Material mat ) : Primitive( mat ), origin( origin ), radius( radius ), r2( radius * radius ) {}
 
 	Hit hit( const Ray &r ) const override
 	{
@@ -142,8 +142,9 @@ struct Sphere : public Primitive
 // Deprecated since AABB cannot be easily determined for an infinite plane
 struct Plane : public Primitive
 {
+	vec3 origin;
 	vec3 n;
-	Plane( vec3 origin, vec3 normal, Material mat ) : Primitive( origin, mat ), n( normal ) {}
+	Plane( vec3 origin, vec3 normal, Material mat ) : Primitive( mat ), n( normal ), origin( origin ) {}
 
 	Hit hit( const Ray &ray ) const override
 	{
@@ -203,7 +204,7 @@ struct Triangle : public Primitive
 {
 	vec3 v0, v1, v2;
 
-	Triangle( vec3 origin, Material mat, vec3 *verteces ) : Primitive( origin, mat )
+	Triangle( Material mat, vec3 *verteces ) : Primitive( mat )
 	{
 		v0 = verteces[0];
 		v1 = verteces[1];
@@ -216,74 +217,51 @@ struct Triangle : public Primitive
 		Hit h;
 		h.hitType = 0;
 
-		// compute plane's normal
 		vec3 v0v1 = v1 - v0;
 		vec3 v0v2 = v2 - v0;
-		// no need to normalize
-		vec3 N = v0v1.cross( v0v2 ); // N
-		float area2 = N.length();
+		vec3 pvec = r.direction.cross( v0v2 );
+		float det = v0v1.dot( pvec );
 
-		// Step 1: finding P
-
-		// check if ray and plane are parallel ?
-		float NdotRayDirection = N.dot( r.direction );
-		if ( fabs( NdotRayDirection ) < EPSILON ) // almost 0
+		// ray and triangle are parallel if det is close to 0
+		if ( fabs( det ) < EPSILON )
 		{
-			return h; // they are parallel so they don't intersect !
+			return h;
 		}
 
-		// compute d parameter
-		float d = N.dot( v0 );
+		float invDet = 1 / det;
 
-		// compute t (equation 3)
-		float t = ( N.dot( r.origin ) + d ) / NdotRayDirection;
-		// check if the triangle is in behind the ray
-		if ( t < 0 )
+		vec3 tvec = r.origin - v0;
+		h.u = tvec.dot( pvec ) * invDet;
+		if ( h.u < 0 || h.u > 1 )
 		{
-			return h; // the triangle is behind
+			return h;
 		}
 
-		// compute the intersection point using equation 1
-		vec3 P = r( t );
-
-		// Step 2: inside-outside test
-		vec3 C; // vector perpendicular to triangle's plane
-
-		// edge 0
-		vec3 edge0 = v1 - v0;
-		vec3 vp0 = P - v0;
-		C = edge0.cross( vp0 );
-		if ( N.dot( C ) < 0 )
+		vec3 qvec = tvec.cross( v0v1 );
+		h.v = r.direction.dot( qvec ) * invDet;
+		if ( h.v < 0 || h.u + h.v > 1 )
 		{
-			return h; // P is on the right side
+			return h;
 		}
 
-		// edge 1
-		vec3 edge1 = v2 - v1;
-		vec3 vp1 = P - v1;
-		C = edge1.cross( vp1 );
-		if ( N.dot( C ) < 0 )
+		float t = v0v2.dot( qvec ) * invDet;
+		if ( t < 0.f )
 		{
-			return h; // P is on the right side
+			return h;
 		}
 
-		// edge 2
-		vec3 edge2 = v0 - v2;
-		vec3 vp2 = P - v2;
-		C = edge2.cross( vp2 );
-		if ( N.dot( C ) < 0 )
-		{
-			return h; // P is on the right side;
-		}
-
+		h.t = t;
+		h.coordinates = r( t );
+		h.mat = mat;
+		h.normal = v0v1.cross( v0v2 );
 		h.hitType = 1;
-		h.coordinates = P;
-		h.normal = N;
-
-		return h; // this ray hits the triangle
+		return h;
 	}
 
 	aabb volume() const override
 	{
+		aabb bounds = aabb( v0, v1 );
+		bounds.Grow( v2 );
+		return bounds;
 	}
 };
