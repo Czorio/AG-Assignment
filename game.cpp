@@ -7,105 +7,26 @@ Renderer *renderer;
 // -----------------------------------------------------------
 void Game::Init()
 {
-	unsigned noPrims = 12;
-	unsigned noLights = 3;
+	Camera cam = Camera( vec3( 0.f, -2.f, -2.f ), vec3( 0.f, -2.f, 0.f ), vec3( 0.f, -1.f, 0.f ), PI / 4, ( (float)SCRWIDTH / (float)SCRHEIGHT ) );
 
-	Camera cam = Camera( vec3( 0.f, 0.f, -2.f ), vec3( 0.f, 0.f, 0.f ), vec3( 0.f, -1.f, 0.f ), PI / 4, ( (float)SCRWIDTH / (float)SCRHEIGHT ) );
+	vector<Primitive *> prims = vector<Primitive *>();
+	vector<Light *> lights = vector<Light *>();
 
-	vector<Primitive *> prims = vector<Primitive *>( noPrims );
-	vector<Light *> lights = vector<Light *>( noLights );
-
-	// Base plane
-	Material floorMat;
-	floorMat.type = MaterialType::MIRROR_MAT;
-	floorMat.loadDiffuse( "test_b_check.jpg" );
-	floorMat.spec = 0.25f;
-	floorMat.color = vec3( 0.25f, 0.25f, 0.25f );
-	prims[0] = new Plane( vec3( 0.f, 2.5f, 0.f ), vec3( 0.f, -1.f, 0.f ), floorMat );
-
-	// Back wall
 	Material mat;
-	mat.loadDiffuse( "Texture.bmp" );
 	mat.type = MaterialType::DIFFUSE_MAT;
-	mat.color = vec3( 0.75f, 0.75f, 0.0f );
-	prims[1] = new Plane( vec3( 0.f, 0.f, 5.0f ), vec3( 0.f, 0.f, -1.f ), mat );
+	mat.color = vec3( 0.75f, 0.75f, 0.75f );
 
-	// Glass Sphere
-	Material glassMat;
-	glassMat.type = MaterialType::MIRROR_MAT;
-	glassMat.color = vec3( 0.35f, 0.7f, 0.35f );
-	glassMat.spec = 0.5f;
-	glassMat.refractionIndex = 1.5f;
-	glassMat.attenuation = 2.5f;
-	glassMat.loadDiffuse( "Texture.bmp" );
-	prims[2] = new Sphere( vec3( 0.f, 0.f, 0.f ), .5f, glassMat );
-
-	// 3x3 grid of spheres
-	// Top row
-	mat.type = MaterialType::DIFFUSE_MAT;
-	mat.color = vec3( 1.f, 0.f, 0.f );
-	prims[3] = new Sphere( vec3( -1.f, -1.f, 4.f ), .5f, mat );
-
-	mat.type = MaterialType::DIFFUSE_MAT;
-	mat.color = vec3( 1.f, 0.33f, 0.33f );
-	prims[4] = new Sphere( vec3( 0.f, -1.f, 4.f ), .5f, mat );
-
-	mat.type = MaterialType::DIFFUSE_MAT;
-	mat.color = vec3( 1.f, 0.67f, 0.67f );
-	prims[5] = new Sphere( vec3( 1.f, -1.f, 4.f ), .5f, mat );
-
-	// Mid row
-	mat.type = MaterialType::DIFFUSE_MAT;
-	mat.color = vec3( 0.f, 1.f, 0.f );
-	prims[6] = new Sphere( vec3( -1.f, 0.f, 4.f ), .5f, mat );
-
-	mat.type = MaterialType::MIRROR_MAT;
-	mat.spec = 0.5f;
-	mat.color = vec3( 0.33f, 1.f, 0.33f );
-	prims[7] = new Sphere( vec3( 0.f, 0.f, 4.f ), .5f, mat );
-
-	mat.type = MaterialType::DIFFUSE_MAT;
-	mat.color = vec3( 0.67f, 1.f, 0.67f );
-	prims[8] = new Sphere( vec3( 1.f, 0.f, 4.f ), .5f, mat );
-
-	// Bot Row
-	mat.type = MaterialType::DIFFUSE_MAT;
-	mat.color = vec3( 0.f, 0.f, 1.f );
-	prims[9] = new Sphere( vec3( -1.f, 1.f, 4.f ), .5f, mat );
-
-	mat.type = MaterialType::DIFFUSE_MAT;
-	mat.color = vec3( 0.33f, 0.33f, 1.f );
-	prims[10] = new Sphere( vec3( 0.f, 1.f, 4.f ), .5f, mat );
-
-	mat.type = MaterialType::DIFFUSE_MAT;
-	mat.color = vec3( 0.67f, 0.67f, 1.f );
-	prims[11] = new Sphere( vec3( 1.f, 1.f, 4.f ), .5f, mat );
+	vector<Primitive *> bunny = loadOBJ( "assets/scene.obj", mat );
+	prims.insert( prims.end(), bunny.begin(), bunny.end() );
 
 	Light *l = new Light();
-	l->type = LightType::SPOT_LIGHT;
-	l->color = vec3( 0.f, 1.f, 1.f );
-	l->intensity = 25.f;
+	l->type = LightType::DIRECTIONAL_LIGHT;
+	l->color = vec3( 1.f, 1.f, 1.f );
+	l->intensity = 1.f;
 	l->fov = PI / 16;
 	l->direction = vec3( 1.f, 1.f, 1.f );
 	l->origin = vec3( -2.f, -5.f, 0.f );
-	lights[0] = l;
-
-	Light *l2 = new Light();
-	l2->type = LightType::SPOT_LIGHT;
-	l2->color = vec3( 1.f, 1.f, 0.f );
-	l2->intensity = 25.f;
-	l2->fov = PI / 16;
-	l2->direction = vec3( -1.f, 1.f, 1.f );
-	l2->origin = vec3( 2.f, -5.f, 0.f );
-	lights[1] = l2;
-
-	Light *l3 = new Light();
-	l3->type = LightType::DIRECTIONAL_LIGHT;
-	l3->color = vec3( 1.f, 0.f, 1.f );
-	l3->intensity = 0.5f;
-	l3->direction = vec3( 0.f, 1.f, 1.f );
-	l3->origin = vec3();
-	lights[2] = l3;
+	lights.push_back( l );
 
 	renderer = new Renderer();
 	renderer->setCamera( cam );
