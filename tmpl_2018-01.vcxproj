@@ -141,6 +141,7 @@
   <!-- END Custom section -->
   <ItemGroup>
     <ClCompile Include="game.cpp" />
+    <ClCompile Include="OBJLoader.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="surface.cpp" />
     <ClCompile Include="template.cpp">
@@ -154,6 +155,7 @@
     <ClInclude Include="game.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="Material.h" />
+    <ClInclude Include="OBJLoader.h" />
     <ClInclude Include="precomp.h" />
     <ClInclude Include="Primitive.h" />
     <ClInclude Include="Ray.h" />

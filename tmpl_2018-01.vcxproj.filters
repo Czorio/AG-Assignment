@@ -9,7 +9,10 @@
       <Filter>template code</Filter>
     </ClCompile>
     <ClCompile Include="Renderer.cpp">
-      <Filter>Whitted</Filter>
+      <Filter>Base Code</Filter>
+    </ClCompile>
+    <ClCompile Include="OBJLoader.cpp">
+      <Filter>Base Code</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -22,22 +25,22 @@
     </ClInclude>
     <ClInclude Include="precomp.h" />
     <ClInclude Include="Ray.h">
-      <Filter>Whitted</Filter>
+      <Filter>Base Code</Filter>
     </ClInclude>
     <ClInclude Include="Camera.h">
-      <Filter>Whitted</Filter>
+      <Filter>Base Code</Filter>
     </ClInclude>
     <ClInclude Include="Light.h">
-      <Filter>Whitted</Filter>
+      <Filter>Base Code</Filter>
     </ClInclude>
     <ClInclude Include="Primitive.h">
-      <Filter>Whitted</Filter>
+      <Filter>Base Code</Filter>
     </ClInclude>
     <ClInclude Include="Material.h">
-      <Filter>Whitted</Filter>
+      <Filter>Base Code</Filter>
     </ClInclude>
     <ClInclude Include="Renderer.h">
-      <Filter>Whitted</Filter>
+      <Filter>Base Code</Filter>
     </ClInclude>
     <ClInclude Include="tiny_obj_loader.h">
       <Filter>Extra Libs</Filter>
@@ -46,21 +49,24 @@
       <Filter>Accelleration Structures</Filter>
     </ClInclude>
     <ClInclude Include="Color.h">
-      <Filter>Whitted</Filter>
+      <Filter>Base Code</Filter>
+    </ClInclude>
+    <ClInclude Include="OBJLoader.h">
+      <Filter>Base Code</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="template code">
       <UniqueIdentifier>{bf32dd6e-4be7-4889-8ac6-49e7ee163c40}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Whitted">
-      <UniqueIdentifier>{bd3e79a0-59cc-4995-82df-ec4f0a269859}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Extra Libs">
       <UniqueIdentifier>{2defa15d-67e0-4084-9066-f49cdc7ace61}</UniqueIdentifier>
     </Filter>
     <Filter Include="Accelleration Structures">
       <UniqueIdentifier>{69f0bb55-4c4f-4e4d-bd45-82e90e27d38a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Base Code">
+      <UniqueIdentifier>{bd3e79a0-59cc-4995-82df-ec4f0a269859}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

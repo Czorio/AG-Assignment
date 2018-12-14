@@ -2,26 +2,27 @@
 
 struct Primitive
 {
-	vec3 origin;
 	Material mat;
 
-	Primitive() : origin( vec3() )
+	Primitive()
 	{
 		mat.color = vec3();
 		mat.spec = 0.f;
 	}
 
-	Primitive( vec3 origin, Material mat ) : origin( origin ), mat( mat ) {}
+	Primitive( Material mat ) : mat( mat ) {}
 
 	virtual Hit hit( const Ray &ray ) const = 0;
+	virtual aabb volume() const = 0;
 };
 
 struct Sphere : public Primitive
 {
+	vec3 origin;
 	float radius;
 	float r2;
 
-	Sphere( vec3 origin, float radius, Material mat ) : Primitive( origin, mat ), radius( radius ), r2( radius * radius ) {}
+	Sphere( vec3 origin, float radius, Material mat ) : Primitive( mat ), origin( origin ), radius( radius ), r2( radius * radius ) {}
 
 	Hit hit( const Ray &r ) const override
 	{
@@ -129,12 +130,21 @@ struct Sphere : public Primitive
 			}
 		}
 	}
+
+	aabb volume() const override
+	{
+		aabb bounds = aabb( origin + vec3( radius, radius, radius ), origin - vec3( radius, radius, radius ) );
+		bounds.Grow( vec3( EPSILON, EPSILON, EPSILON ) );
+		return bounds;
+	}
 };
 
+// Deprecated since AABB cannot be easily determined for an infinite plane
 struct Plane : public Primitive
 {
+	vec3 origin;
 	vec3 n;
-	Plane( vec3 origin, vec3 normal, Material mat ) : Primitive( origin, mat ), n( normal ) {}
+	Plane( vec3 origin, vec3 normal, Material mat ) : Primitive( mat ), n( normal ), origin( origin ) {}
 
 	Hit hit( const Ray &ray ) const override
 	{
@@ -169,6 +179,11 @@ struct Plane : public Primitive
 		return h;
 	}
 
+	aabb volume() const override
+	{
+		return aabb();
+	}
+
   private:
 	// I asked a question on StackOverflow for this one
 	// https://computergraphics.stackexchange.com/questions/8382/how-do-i-convert-a-hit-on-an-infinite-plane-to-uv-coordinates-for-texturing-in-a
@@ -182,5 +197,71 @@ struct Plane : public Primitive
 		vec3 c = cross( normal, vec3( 0, 0, 1 ) );
 
 		return normalize( dot( max_ab, max_ab ) < dot( c, c ) ? c : max_ab );
+	}
+};
+
+struct Triangle : public Primitive
+{
+	vec3 v0, v1, v2;
+
+	Triangle( Material mat, vec3 *verteces ) : Primitive( mat )
+	{
+		v0 = verteces[0];
+		v1 = verteces[1];
+		v2 = verteces[2];
+	}
+
+	// Based on ScratchaPixel's implementation
+	Hit hit( const Ray &r ) const override
+	{
+		Hit h;
+		h.hitType = 0;
+
+		vec3 v0v1 = v1 - v0;
+		vec3 v0v2 = v2 - v0;
+		vec3 pvec = r.direction.cross( v0v2 );
+		float det = v0v1.dot( pvec );
+
+		// ray and triangle are parallel if det is close to 0
+		if ( fabs( det ) < EPSILON )
+		{
+			return h;
+		}
+
+		float invDet = 1 / det;
+
+		vec3 tvec = r.origin - v0;
+		h.u = tvec.dot( pvec ) * invDet;
+		if ( h.u < 0 || h.u > 1 )
+		{
+			return h;
+		}
+
+		vec3 qvec = tvec.cross( v0v1 );
+		h.v = r.direction.dot( qvec ) * invDet;
+		if ( h.v < 0 || h.u + h.v > 1 )
+		{
+			return h;
+		}
+
+		float t = v0v2.dot( qvec ) * invDet;
+		if ( t < 0.f )
+		{
+			return h;
+		}
+
+		h.t = t;
+		h.coordinates = r( t );
+		h.mat = mat;
+		h.normal = v0v1.cross( v0v2 );
+		h.hitType = 1;
+		return h;
+	}
+
+	aabb volume() const override
+	{
+		aabb bounds = aabb( v0, v1 );
+		bounds.Grow( v2 );
+		return bounds;
 	}
 };
