@@ -66,10 +66,7 @@ vector<Primitive *> loadOBJ( const char *filename, const Material &defaultMat )
 			// per-face material
 			shapes[s].mesh.material_ids[f];
 
-			Material mat;
-
-
-			result.push_back( new Triangle( mat, verts ) );
+			result.push_back( new Triangle( defaultMat, verts ) );
 		}
 	}
 

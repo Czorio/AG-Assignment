@@ -2,12 +2,11 @@
 class Renderer
 {
   public:
-	Renderer();
+	Renderer(vector<Primitive *> primitives);
 	~Renderer();
 
 	void renderFrame();
 
-	void setPrimitives( vector<Primitive *> primitives );
 	void setLights( vector<Light *> lights );
 	void setCamera( Camera cam );
 
@@ -15,14 +14,14 @@ class Renderer
 	void moveCam( vec3 vec );
 	void rotateCam( vec3 vec );
 
-	Pixel *getOutput();
+	Pixel *getOutput() const;
 
   private:
 	vector<tuple<int, int>> tiles;
 
 	Camera cam;
 	vector<Primitive *> primitives;
-	BVH bvh;
+	const BVH bvh;
 	vector<Light *> lights;
 	Pixel *buffer;
 

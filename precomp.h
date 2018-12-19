@@ -11,7 +11,7 @@
 #define SCRHEIGHT 512
 #define TILESIZE 16
 
-#define BVHDEPTH 256
+#define BVHDEPTH 16
 
 #define MAXRAYDEPTH 4
 #define	SAMPLES 1
@@ -19,7 +19,7 @@
 #define SHADOWBIAS 0.001f
 #define REFLECTIONBIAS 0.001f
 #define REFRACTIONBIAS 0.001f
-#define EPSILON 0.001f
+#define EPSILON 0.0001f
 
 #define AMBIENTLIGHT 0.f
 
