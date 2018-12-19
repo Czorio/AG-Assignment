@@ -2,6 +2,7 @@
 
 struct Primitive
 {
+	vec3 origin;
 	Material mat;
 
 	Primitive()
@@ -10,7 +11,7 @@ struct Primitive
 		mat.spec = 0.f;
 	}
 
-	Primitive( Material mat ) : mat( mat ) {}
+	Primitive( vec3 origin, Material mat ) : origin( origin ), mat( mat ) {}
 
 	virtual Hit hit( const Ray &ray ) const = 0;
 	virtual aabb volume() const = 0;
@@ -18,15 +19,14 @@ struct Primitive
 
 struct Sphere : public Primitive
 {
-	vec3 origin;
 	float radius;
 	float r2;
 
-	Sphere( vec3 origin, float radius, Material mat ) : Primitive( mat ), origin( origin ), radius( radius ), r2( radius * radius ) {}
+	Sphere( vec3 origin, float radius, Material mat ) : Primitive( origin, mat ), radius( radius ), r2( radius * radius ) {}
 
 	Hit hit( const Ray &r ) const override
 	{
-		Hit h;
+		Hit h = Hit();
 		h.hitType = 0;
 
 		float a = r.direction.dot( r.direction );
@@ -133,8 +133,7 @@ struct Sphere : public Primitive
 
 	aabb volume() const override
 	{
-		aabb bounds = aabb( origin + vec3( radius, radius, radius ), origin - vec3( radius, radius, radius ) );
-		bounds.Grow( vec3( EPSILON, EPSILON, EPSILON ) );
+		aabb bounds = aabb( origin - vec3( radius + EPSILON, radius + EPSILON, radius + EPSILON ), origin + vec3( radius + EPSILON, radius + EPSILON, radius + EPSILON ) );
 		return bounds;
 	}
 };
@@ -142,13 +141,12 @@ struct Sphere : public Primitive
 // Deprecated since AABB cannot be easily determined for an infinite plane
 struct Plane : public Primitive
 {
-	vec3 origin;
 	vec3 n;
-	Plane( vec3 origin, vec3 normal, Material mat ) : Primitive( mat ), n( normal ), origin( origin ) {}
+	Plane( vec3 origin, vec3 normal, Material mat ) : Primitive( origin, mat ), n( normal ) {}
 
 	Hit hit( const Ray &ray ) const override
 	{
-		Hit h;
+		Hit h = Hit();
 		vec3 normal = n; // so that it can be normalized
 		normal.normalize();
 		h.hitType = 0;
@@ -204,17 +202,19 @@ struct Triangle : public Primitive
 {
 	vec3 v0, v1, v2;
 
-	Triangle( Material mat, vec3 *verteces ) : Primitive( mat )
+	Triangle( Material mat, vec3 *verteces ) : Primitive( vec3(), mat )
 	{
 		v0 = verteces[0];
 		v1 = verteces[1];
 		v2 = verteces[2];
+
+		origin = vec3( ( v0.x + v1.x + v2.x ) / 3, ( v0.y + v1.y + v2.y ) / 3, ( v0.z + v1.z + v2.z ) / 3 );
 	}
 
 	// Based on ScratchaPixel's implementation
 	Hit hit( const Ray &r ) const override
 	{
-		Hit h;
+		Hit h = Hit();
 		h.hitType = 0;
 
 		vec3 v0v1 = v1 - v0;

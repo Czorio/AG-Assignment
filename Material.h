@@ -34,7 +34,7 @@ struct Material
 		Pixel *buffer = image->GetBuffer();
 		diffuse->values = new vec3[diffuse->width * diffuse->height];
 
-		for ( int i = 0; i < diffuse->height * diffuse->width; i++ )
+		for ( unsigned i = 0; i < diffuse->height * diffuse->width; i++ )
 		{
 			Color converter;
 			vec3 color = vec3();
@@ -57,7 +57,6 @@ struct Material
 	{
 		if ( hasTexture )
 		{
-
 			int x = int( u * diffuse->width ) % diffuse->width;
 			int y = int( v * diffuse->height ) % diffuse->height;
 			return diffuse->values[y * diffuse->width + x];

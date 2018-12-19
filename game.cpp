@@ -7,31 +7,103 @@ Renderer *renderer;
 // -----------------------------------------------------------
 void Game::Init()
 {
-	Camera cam = Camera( vec3( 0.f, -2.f, -2.f ), vec3( 0.f, -2.f, 0.f ), vec3( 0.f, -1.f, 0.f ), PI / 4, ( (float)SCRWIDTH / (float)SCRHEIGHT ) );
-
-	vector<Primitive *> prims = vector<Primitive *>();
-	vector<Light *> lights = vector<Light *>();
+	Camera cam = Camera( vec3( 0.f, 0.f, -5.f ), vec3( 0.f, 0.f, 0.f ), vec3( 0.f, -1.f, 0.f ), PI / 4, ( (float)SCRWIDTH / (float)SCRHEIGHT ) );
 
 	Material mat;
 	mat.type = MaterialType::DIFFUSE_MAT;
 	mat.color = vec3( 0.75f, 0.75f, 0.75f );
 
-	vector<Primitive *> bunny = loadOBJ( "assets/scene.obj", mat );
-	prims.insert( prims.end(), bunny.begin(), bunny.end() );
+	//vector<Primitive *> scene = loadOBJ( "assets/sceneLo.obj", mat );
 
-	Light *l = new Light();
-	l->type = LightType::DIRECTIONAL_LIGHT;
-	l->color = vec3( 1.f, 1.f, 1.f );
-	l->intensity = 1.f;
-	l->fov = PI / 16;
-	l->direction = vec3( 1.f, 1.f, 1.f );
-	l->origin = vec3( -2.f, -5.f, 0.f );
-	lights.push_back( l );
+	vector<Primitive *> prims;
+	// Base plane
+	mat.type = MaterialType::MIRROR_MAT;
+	mat.spec = 0.25f;
+	mat.color = vec3( 0.25f, 0.25f, 0.25f );
+	//prims.push_back( new Plane( vec3( 0.f, 2.5f, 0.f ), vec3( 0.f, -1.f, 0.f ), mat ) );
+	prims.push_back( new Sphere( vec3( 0.f, 102.f, 0.f ), 100.f, mat ) );
 
-	renderer = new Renderer();
+	// Back wall
+	mat.type = MaterialType::DIFFUSE_MAT;
+	mat.color = vec3( 0.75f, 0.75f, 0.75f );
+	//prims.push_back( new Plane( vec3( 0.f, 0.f, 5.0f ), vec3( 0.f, 0.f, -1.f ), mat ) );
+	prims.push_back( new Sphere( vec3( 0.f, 0.f, 105.f ), 100.f, mat ) );
+
+	// Glass Sphere
+	Material glassMat;
+	glassMat.type = MaterialType::GLASS_MAT;
+	glassMat.color = vec3( 0.35f, 0.7f, 0.35f );
+	glassMat.spec = 1.f;
+	glassMat.refractionIndex = 1.5f;
+	glassMat.attenuation = 2.5f;
+	prims.push_back( new Sphere( vec3( 0.f, 0.f, 0.f ), .5f, glassMat ) );
+
+	// 3x3 grid of spheres
+	// Top row
+	mat.type = MaterialType::DIFFUSE_MAT;
+	mat.color = vec3( 1.f, 0.f, 0.f );
+	prims.push_back( new Sphere( vec3( -1.f, -1.f, 4.f ), .5f, mat ) );
+
+	mat.type = MaterialType::DIFFUSE_MAT;
+	mat.color = vec3( 1.f, 0.33f, 0.33f );
+	prims.push_back( new Sphere( vec3( 0.f, -1.f, 4.f ), .5f, mat ) );
+
+	mat.type = MaterialType::DIFFUSE_MAT;
+	mat.color = vec3( 1.f, 0.67f, 0.67f );
+	prims.push_back( new Sphere( vec3( 1.f, -1.f, 4.f ), .5f, mat ) );
+
+	// Mid row
+	mat.type = MaterialType::DIFFUSE_MAT;
+	mat.color = vec3( 0.f, 1.f, 0.f );
+	prims.push_back( new Sphere( vec3( -1.f, 0.f, 4.f ), .5f, mat ) );
+
+	mat.type = MaterialType::MIRROR_MAT;
+	mat.spec = 0.5f;
+	mat.color = vec3( 0.33f, 1.f, 0.33f );
+	prims.push_back( new Sphere( vec3( 0.f, 0.f, 4.f ), .5f, mat ) );
+
+	mat.type = MaterialType::DIFFUSE_MAT;
+	mat.color = vec3( 0.67f, 1.f, 0.67f );
+	prims.push_back( new Sphere( vec3( 1.f, 0.f, 4.f ), .5f, mat ) );
+
+	// Bot Row
+	mat.type = MaterialType::DIFFUSE_MAT;
+	mat.color = vec3( 0.f, 0.f, 1.f );
+	prims.push_back( new Sphere( vec3( -1.f, 1.f, 4.f ), .5f, mat ) );
+
+	mat.type = MaterialType::DIFFUSE_MAT;
+	mat.color = vec3( 0.33f, 0.33f, 1.f );
+	prims.push_back( new Sphere( vec3( 0.f, 1.f, 4.f ), .5f, mat ) );
+
+	mat.type = MaterialType::DIFFUSE_MAT;
+	mat.color = vec3( 0.67f, 0.67f, 1.f );
+	prims.push_back( new Sphere( vec3( 1.f, 1.f, 4.f ), .5f, mat ) );
+
+	vector<Light *> lights = vector<Light *>();
+
+	Light *sun = new Light();
+	sun->type = LightType::DIRECTIONAL_LIGHT;
+	sun->color = vec3( 1.f, 1.f, 1.f );
+	sun->intensity = 1.f;
+	sun->fov = PI / 16;
+	sun->direction = vec3( 0.f, 1.f, 1.f );
+	sun->origin = vec3( 0.f, 0.f, 0.f );
+	lights.push_back( sun );
+
+	Light *spot = new Light();
+	spot->type = LightType::SPOT_LIGHT;
+	spot->color = vec3( 1.f, 1.f, 1.f );
+	spot->intensity = 25.f;
+	spot->fov = PI / 8;
+	spot->direction = vec3( 0.f, 0.f, 1.f );
+	spot->origin = vec3( 0.f, 0.f, -5.f );
+	lights.push_back( spot );
+
+	//printf( "Primitives: %d\nLights: %d", scene.size(), lights.size() );
+
+	renderer = new Renderer( prims );
 	renderer->setCamera( cam );
 	renderer->setLights( lights );
-	renderer->setPrimitives( prims );
 }
 
 // -----------------------------------------------------------
