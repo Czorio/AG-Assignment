@@ -1,6 +1,6 @@
 #include "precomp.h"
 
-Renderer::Renderer()
+Renderer::Renderer( vector<Primitive *> primitives ) : bvh( BVH( primitives ) )
 {
 	buffer = new Pixel[SCRWIDTH * SCRHEIGHT];
 
@@ -12,6 +12,8 @@ Renderer::Renderer()
 			tiles.push_back( element );
 		}
 	}
+
+	this->primitives = primitives;
 }
 
 Renderer::~Renderer()
@@ -52,14 +54,6 @@ void Renderer::renderFrame()
 	}
 }
 
-void Renderer::setPrimitives( vector<Primitive *> primitives )
-{
-	this->primitives = primitives;
-
-	bvh = BVH();
-	bvh.constructBVH( primitives );
-}
-
 void Renderer::setLights( vector<Light *> lights )
 {
 	this->lights = lights;
@@ -87,7 +81,7 @@ void Renderer::rotateCam( vec3 vec )
 	cam.rotate( vec );
 }
 
-Pixel *Renderer::getOutput()
+Pixel *Renderer::getOutput() const
 {
 	return buffer;
 }
@@ -171,7 +165,7 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 	closestHit.t = FLT_MAX;
 
 	// Find nearest hit
-	for ( Primitive *p : primitives )
+	/*for ( Primitive *p : primitives )
 	{
 		Hit tmp = p->hit( r );
 		if ( tmp.hitType != 0 )
@@ -181,7 +175,11 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 				closestHit = tmp;
 			}
 		}
-	}
+	}*/
+
+	closestHit = bvh.intersect( r );
+
+	//return vec3( 0.f, float( closestHit.bvhDepth / BVHDEPTH ), 0.f );
 
 	// No hit
 	if ( closestHit.t == FLT_MAX )
@@ -314,7 +312,7 @@ vec3 Renderer::shadowRay( const Hit &h, const Light *l ) const
 
 		Hit shdw;
 
-		for ( Primitive *prim : primitives )
+		/*for ( Primitive *prim : primitives )
 		{
 			shdw = prim->hit( shadowRay );
 			// See if the distance of the light is less than the closest physical hit
@@ -322,9 +320,18 @@ vec3 Renderer::shadowRay( const Hit &h, const Light *l ) const
 			{
 				return vec3();
 			}
-		}
+		}*/
 
-		return l->color * dot * intensity * inverseSquare;
+		shdw = bvh.intersect( shadowRay );
+
+		if ( shdw.hitType != 0 && shdw.t < dist )
+		{
+			return vec3();
+		}
+		else
+		{
+			return l->color * dot * intensity * inverseSquare;
+		}
 	}
 	else
 	{

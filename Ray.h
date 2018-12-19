@@ -1,6 +1,8 @@
 #pragma once
 struct Hit
 {
+	Hit() : hitType( 0 ), t( FLT_MAX ) {}
+
 	// World
 	int hitType; // -1 hit from inside; 0 no hit; 1 hit
 	float t;
@@ -11,6 +13,9 @@ struct Hit
 	float u;
 	float v;
 	Material mat;
+
+	// DEBUG
+	int bvhDepth;
 };
 
 struct Ray
