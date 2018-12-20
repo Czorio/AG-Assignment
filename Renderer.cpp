@@ -177,9 +177,9 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 		}
 	}*/
 
-	closestHit = bvh.intersect( r );
+	//closestHit = bvh.intersect( r );
 
-	//return vec3( 0.f, float( closestHit.bvhDepth / BVHDEPTH ), 0.f );
+	return bvh.debug( r );
 
 	// No hit
 	if ( closestHit.t == FLT_MAX )

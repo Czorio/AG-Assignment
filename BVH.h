@@ -139,6 +139,26 @@ struct BVHNode
 		}
 	}
 
+	vec3 debug( const Ray &r ) const
+	{
+		if ( rayIntersectsBounds( bounds, r ) )
+		{
+
+			if ( isLeaf )
+			{
+				return vec3( 0.f, 1.f / (float)BVHDEPTH, 0.f );
+			}
+			else
+			{
+				return vec3( 0.f, 1.f / (float)BVHDEPTH, 0.f ) + left->debug( r ) + right->debug( r );
+			}
+		}
+		else
+		{
+			return vec3();
+		}
+	}
+
   private:
 	// Based on Slab method, as described on https://tavianator.com/fast-branchless-raybounding-box-intersections/
 	inline bool rayIntersectsBounds( const aabb &bounds, const Ray &r ) const
@@ -183,6 +203,11 @@ class BVH
 	Hit intersect( const Ray &r ) const
 	{
 		return head->intersect( r );
+	}
+
+	vec3 debug(const Ray& r) const
+	{
+		return head->debug( r );
 	}
 
   private:

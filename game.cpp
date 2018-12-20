@@ -13,7 +13,13 @@ void Game::Init()
 	mat.type = MaterialType::DIFFUSE_MAT;
 	mat.color = vec3( 0.75f, 0.75f, 0.75f );
 
-	//vector<Primitive *> scene = loadOBJ( "assets/sceneLo.obj", mat );
+	vector<Primitive *> scene = loadOBJ( "assets/Monkey.obj", mat );
+
+	for ( size_t i = 0; i < scene.size(); i++ )
+	{
+		aabb bounds = scene[i]->volume();
+		printf( "Triangle %d:\n\tmin: (%f, %f, %f)\n\tmax: (%f, %f, %f)\n", i, bounds.bmin[0], bounds.bmin[1], bounds.bmin[2], bounds.bmax[0], bounds.bmax[1], bounds.bmax[2] );
+	}
 
 	vector<Primitive *> prims;
 	// Base plane
