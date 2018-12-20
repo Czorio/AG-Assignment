@@ -22,16 +22,18 @@ struct Material
 	float refractionIndex;
 	float attenuation;
 
-	// From LodePNG examples
 	void loadDiffuse( char *filename )
 	{
-		Surface *image = new Surface( filename );
+		// Load file
+		Surface image = Surface( filename );
 
+		// Prepare Texture
 		diffuse = new Texture();
-		diffuse->height = image->GetHeight();
-		diffuse->width = image->GetWidth();
+		diffuse->height = image.GetHeight();
+		diffuse->width = image.GetWidth();
 
-		Pixel *buffer = image->GetBuffer();
+		// Load values into Texture
+		Pixel *buffer = image.GetBuffer();
 		diffuse->values = new vec3[diffuse->width * diffuse->height];
 
 		for ( unsigned i = 0; i < diffuse->height * diffuse->width; i++ )
@@ -48,14 +50,13 @@ struct Material
 			diffuse->values[i] = color;
 		}
 
-		delete image;
-
-		hasTexture = true;
+		hasDiffuseTexture = true;
 	}
 
+	// Use this to get the color at the hit coordinates
 	vec3 getDiffuse( float u, float v )
 	{
-		if ( hasTexture )
+		if ( hasDiffuseTexture )
 		{
 			int x = int( u * diffuse->width ) % diffuse->width;
 			int y = int( v * diffuse->height ) % diffuse->height;
@@ -68,6 +69,6 @@ struct Material
 	}
 
   private:
-	bool hasTexture = false;
+	bool hasDiffuseTexture = false;
 	Texture *diffuse;
 };

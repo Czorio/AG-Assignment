@@ -7,16 +7,13 @@ struct BVHNode
 	BVHNode *left, *right;
 	vector<Primitive *> primitives;
 
-	//DEBUG
-	int depth;
-
 	BVHNode( vector<Primitive *> primitives ) : primitives( primitives )
 	{
 		bounds = aabb();
+		bounds.Reset();
 		isLeaf = true;
 		left = nullptr;
 		right = nullptr;
-		primitives = primitives;
 
 		for ( size_t i = 0; i < primitives.size(); i++ )
 		{
@@ -26,24 +23,17 @@ struct BVHNode
 
 	void subdivide( int currentDepth )
 	{
-		depth = currentDepth;
-		if ( ( primitives.size() <= 3 ) || ( currentDepth >= BVHDEPTH ) )
+		// Conditions warrant a leaf node
+		if ( ( primitives.size() < 3 ) || ( currentDepth >= BVHDEPTH ) )
 		{
 			return;
 		}
 
+		// Split aabb on longest axis
 		int longestAxis = bounds.LongestAxis();
 		float center = bounds.Center( longestAxis );
 
-		vec3 leftMin = vec3( bounds.Minimum( 0 ), bounds.Minimum( 1 ), bounds.Minimum( 2 ) );
-		vec3 leftMax = vec3( bounds.Minimum( 0 ), bounds.Minimum( 1 ), bounds.Minimum( 2 ) );
-
-		vec3 rightMin = vec3( bounds.Minimum( 0 ), bounds.Minimum( 1 ), bounds.Minimum( 2 ) );
-		vec3 rightMax = vec3( bounds.Minimum( 0 ), bounds.Minimum( 1 ), bounds.Minimum( 2 ) );
-
-		leftMax[longestAxis] = center;
-		rightMin[longestAxis] = center;
-
+		// Divide primitives across left and right nodes
 		vector<Primitive *> leftPrims;
 		vector<Primitive *> rightPrims;
 
@@ -65,6 +55,7 @@ struct BVHNode
 		right = new BVHNode( rightPrims );
 		right->subdivide( currentDepth + 1 );
 
+		// We are no longer a leaf
 		isLeaf = false;
 	}
 
@@ -85,14 +76,12 @@ struct BVHNode
 					h = tmp;
 				}
 			}
-
-			h.bvhDepth = depth;
 			return h;
 		}
 		else
 		{
 			// Determine if we get hits in the child nodes
-			// Also determine which hit, if 2 exist, is closest
+			// Also determine which hit, if left and right hits exist, is closest
 			Hit leftHit = Hit(), rightHit = Hit();
 			leftHit.hitType = 0;
 			rightHit.hitType = 0;
@@ -136,6 +125,27 @@ struct BVHNode
 				// leftHit should still have hitType 0, this is fine
 				return leftHit;
 			}
+		}
+	}
+
+	// Debug BVH visualizer
+	vec3 debug( const Ray &r ) const
+	{
+		if ( rayIntersectsBounds( bounds, r ) )
+		{
+
+			if ( isLeaf )
+			{
+				return vec3( 0.f, 1.f / (float)BVHDEPTH, 0.f );
+			}
+			else
+			{
+				return vec3( 0.f, 1.f / (float)BVHDEPTH, 0.f ) + left->debug( r ) + right->debug( r );
+			}
+		}
+		else
+		{
+			return vec3();
 		}
 	}
 
@@ -183,6 +193,11 @@ class BVH
 	Hit intersect( const Ray &r ) const
 	{
 		return head->intersect( r );
+	}
+
+	vec3 debug( const Ray &r ) const
+	{
+		return head->debug( r );
 	}
 
   private:

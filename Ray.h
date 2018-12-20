@@ -13,9 +13,6 @@ struct Hit
 	float u;
 	float v;
 	Material mat;
-
-	// DEBUG
-	int bvhDepth;
 };
 
 struct Ray
