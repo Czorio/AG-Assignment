@@ -7,9 +7,6 @@ struct BVHNode
 	BVHNode *left, *right;
 	vector<Primitive *> primitives;
 
-	//DEBUG
-	int depth;
-
 	BVHNode( vector<Primitive *> primitives ) : primitives( primitives )
 	{
 		bounds = aabb();
@@ -26,7 +23,6 @@ struct BVHNode
 
 	void subdivide( int currentDepth )
 	{
-		depth = currentDepth;
 		if ( ( primitives.size() <= 3 ) || ( currentDepth >= BVHDEPTH ) )
 		{
 			return;
@@ -85,8 +81,6 @@ struct BVHNode
 					h = tmp;
 				}
 			}
-
-			h.bvhDepth = depth;
 			return h;
 		}
 		else
