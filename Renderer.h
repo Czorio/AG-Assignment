@@ -2,7 +2,7 @@
 class Renderer
 {
   public:
-	Renderer(vector<Primitive *> primitives);
+	Renderer( vector<Primitive *> primitives );
 	~Renderer();
 
 	void renderFrame();

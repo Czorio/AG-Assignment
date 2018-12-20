@@ -7,19 +7,13 @@ Renderer *renderer;
 // -----------------------------------------------------------
 void Game::Init()
 {
-	Camera cam = Camera( vec3( 0.f, 0.f, -5.f ), vec3( 0.f, 0.f, 0.f ), vec3( 0.f, -1.f, 0.f ), PI / 4, ( (float)SCRWIDTH / (float)SCRHEIGHT ) );
+	Camera cam = Camera( vec3( 0.f, 0.f, -2.f ), vec3( 0.f, 0.f, 0.f ), vec3( 0.f, -1.f, 0.f ), PI / 4, ( (float)SCRWIDTH / (float)SCRHEIGHT ) );
 
 	Material mat;
 	mat.type = MaterialType::DIFFUSE_MAT;
-	mat.color = vec3( 0.75f, 0.75f, 0.75f );
+	mat.color = vec3( 0.75f, 0.5f, 0.75f );
 
 	vector<Primitive *> scene = loadOBJ( "assets/Monkey.obj", mat );
-
-	for ( size_t i = 0; i < scene.size(); i++ )
-	{
-		aabb bounds = scene[i]->volume();
-		printf( "Triangle %d:\n\tmin: (%f, %f, %f)\n\tmax: (%f, %f, %f)\n", i, bounds.bmin[0], bounds.bmin[1], bounds.bmin[2], bounds.bmax[0], bounds.bmax[1], bounds.bmax[2] );
-	}
 
 	vector<Primitive *> prims;
 	// Base plane
@@ -105,9 +99,7 @@ void Game::Init()
 	spot->origin = vec3( 0.f, 0.f, -5.f );
 	lights.push_back( spot );
 
-	//printf( "Primitives: %d\nLights: %d", scene.size(), lights.size() );
-
-	renderer = new Renderer( prims );
+	renderer = new Renderer( scene );
 	renderer->setCamera( cam );
 	renderer->setLights( lights );
 }

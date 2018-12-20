@@ -92,7 +92,7 @@ vec3 Renderer::shootRay( unsigned x, unsigned y, unsigned depth ) const
 	return shootRay( r, depth );
 }
 
-inline void clampFloat( float &val, float lo, float hi )
+__inline void clampFloat( float &val, float lo, float hi )
 {
 	if ( val > hi )
 	{
@@ -163,9 +163,9 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 {
 	Hit closestHit;
 	closestHit.t = FLT_MAX;
-
+#ifdef LINEAR_TRAVERSE
 	// Find nearest hit
-	/*for ( Primitive *p : primitives )
+	for ( Primitive *p : primitives )
 	{
 		Hit tmp = p->hit( r );
 		if ( tmp.hitType != 0 )
@@ -175,11 +175,14 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 				closestHit = tmp;
 			}
 		}
-	}*/
-
-	//closestHit = bvh.intersect( r );
-
+	}
+#endif
+#ifdef USE_BVH
+	closestHit = bvh.intersect( r );
+#endif
+#ifdef BVH_DEBUG
 	return bvh.debug( r );
+#endif
 
 	// No hit
 	if ( closestHit.t == FLT_MAX )
@@ -312,17 +315,23 @@ vec3 Renderer::shadowRay( const Hit &h, const Light *l ) const
 
 		Hit shdw;
 
-		/*for ( Primitive *prim : primitives )
+#ifdef LINEAR_TRAVERSE
+		// Find nearest hit
+		for ( Primitive *p : primitives )
 		{
-			shdw = prim->hit( shadowRay );
-			// See if the distance of the light is less than the closest physical hit
-			if ( shdw.hitType != 0 && shdw.t < dist )
+			Hit tmp = p->hit( shadowRay );
+			if ( tmp.hitType != 0 )
 			{
-				return vec3();
+				if ( tmp.t < shdw.t )
+				{
+					shdw = tmp;
+				}
 			}
-		}*/
-
+		}
+#endif
+#ifdef USE_BVH
 		shdw = bvh.intersect( shadowRay );
+#endif
 
 		if ( shdw.hitType != 0 && shdw.t < dist )
 		{
