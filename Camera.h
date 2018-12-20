@@ -58,7 +58,7 @@ class Camera
 	// Own code
 	void rotate( vec3 v )
 	{
-		vec3 new_forward = rotateVec( forward, up, v.x ); // Left/Right
+		vec3 new_forward = rotateVec( forward, up, v.x );	// Left/Right
 		new_forward = rotateVec( new_forward, right, -v.y ); // Up/Down
 
 		forward = new_forward.normalized();

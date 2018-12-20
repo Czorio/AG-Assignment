@@ -37,7 +37,7 @@ vector<Primitive *> loadOBJ( const char *filename, const Material &defaultMat )
 		{
 			int fv = shapes[s].mesh.num_face_vertices[f];
 			vec3 *verts = new vec3[fv];
-
+			vec2 *uv = new vec2[fv];
 			// Loop over verteces
 			for ( size_t v = 0; v < fv; v++ )
 			{
@@ -53,20 +53,16 @@ vector<Primitive *> loadOBJ( const char *filename, const Material &defaultMat )
 				tinyobj::real_t ty = attributes.texcoords[2 * idx.texcoord_index + 1];
 
 				verts[v] = vec3( vx, vy, vz );
-
-				// Optional: vertex colors
-				// tinyobj::real_t red = attrib.colors[3*idx.vertex_index+0];
-				// tinyobj::real_t green = attrib.colors[3*idx.vertex_index+1];
-				// tinyobj::real_t blue = attrib.colors[3*idx.vertex_index+2];
+				uv[v] = vec2( tx, ty );
 			}
-
 
 			indexOffset += fv;
 
 			// per-face material
+			// TODO: get material from .mtl file
 			shapes[s].mesh.material_ids[f];
 
-			result.push_back( new Triangle( defaultMat, verts ) );
+			result.push_back( new Triangle( defaultMat, verts, uv ) );
 		}
 	}
 

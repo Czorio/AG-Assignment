@@ -7,13 +7,13 @@ Renderer *renderer;
 // -----------------------------------------------------------
 void Game::Init()
 {
-	Camera cam = Camera( vec3( 0.f, 0.f, -5.f ), vec3( 0.f, 0.f, 0.f ), vec3( 0.f, -1.f, 0.f ), PI / 4, ( (float)SCRWIDTH / (float)SCRHEIGHT ) );
+	Camera cam = Camera( vec3( 0.f, 0.f, -2.f ), vec3( 0.f, 0.f, 0.f ), vec3( 0.f, -1.f, 0.f ), PI / 4, ( (float)SCRWIDTH / (float)SCRHEIGHT ) );
 
 	Material mat;
 	mat.type = MaterialType::DIFFUSE_MAT;
-	mat.color = vec3( 0.75f, 0.75f, 0.75f );
+	mat.color = vec3( 0.75f, 0.5f, 0.75f );
 
-	//vector<Primitive *> scene = loadOBJ( "assets/sceneLo.obj", mat );
+	vector<Primitive *> scene = loadOBJ( "assets/Monkey.obj", mat );
 
 	vector<Primitive *> prims;
 	// Base plane
@@ -99,9 +99,7 @@ void Game::Init()
 	spot->origin = vec3( 0.f, 0.f, -5.f );
 	lights.push_back( spot );
 
-	//printf( "Primitives: %d\nLights: %d", scene.size(), lights.size() );
-
-	renderer = new Renderer( prims );
+	renderer = new Renderer( scene );
 	renderer->setCamera( cam );
 	renderer->setLights( lights );
 }
