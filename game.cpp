@@ -1,8 +1,10 @@
 #include "precomp.h" // include (only) this in every .cpp file
 
 Renderer *renderer;
+int noPrim;
+int noLight;
 
-// -----------------------------------------------------------
+	// -----------------------------------------------------------
 // Initialize the application
 // -----------------------------------------------------------
 void Game::Init()
@@ -13,7 +15,7 @@ void Game::Init()
 	mat.type = MaterialType::DIFFUSE_MAT;
 	mat.color = vec3( 0.75f, 0.5f, 0.75f );
 
-	vector<Primitive *> scene = loadOBJ( "assets/Monkey.obj", mat );
+	vector<Primitive *> scene = loadOBJ( "assets/Robot.obj", mat );
 
 	vector<Primitive *> prims;
 	// Base plane
@@ -100,6 +102,8 @@ void Game::Init()
 	lights.push_back( spot );
 
 	renderer = new Renderer( scene );
+	noPrim = scene.size();
+	noLight = lights.size();
 	renderer->setCamera( cam );
 	renderer->setLights( lights );
 }
@@ -205,7 +209,7 @@ void Game::Tick( float deltaTime )
 
 	// Display
 	screen->SetBuffer( renderer->getOutput() );
-	screen->Print( ( "FPS: " + to_string( fps ) ).c_str(), 2, 2, 0xFFFFFF );
+	screen->Print( ( "FPS: " + to_string( fps ) + " " + to_string( noPrim ) + " Primitives, " + to_string( noLight ) + " Lights" ).c_str(), 2, 2, 0xFFFFFF );
 	if ( !showHelp )
 	{
 		screen->Print( "Press \"h\" for controls", 2, 8, 0xFFFFFF );

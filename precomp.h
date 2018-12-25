@@ -12,9 +12,9 @@
 #define TILESIZE 16
 
 //#define LINEAR_TRAVERSE
-#define USE_BVH
-//#define BVH_DEBUG
-#define BVHDEPTH 64
+//#define USE_BVH
+#define BVH_DEBUG
+#define BVHDEPTH 16
 
 #define MAXRAYDEPTH 4
 #define SAMPLES 1
