@@ -12,72 +12,72 @@ void Game::Init()
 	Material mat;
 	mat.type = MaterialType::DIFFUSE_MAT;
 	mat.color = vec3( 0.75f, 0.5f, 0.75f );
-
-	vector<Primitive *> scene = loadOBJ( "assets/Monkey.obj", mat );
+	
+	vector<Primitive *> scene = loadOBJ( "assets/monkey.obj", mat );
 
 	vector<Primitive *> prims;
-	// Base plane
-	mat.type = MaterialType::MIRROR_MAT;
-	mat.spec = 0.25f;
-	mat.color = vec3( 0.25f, 0.25f, 0.25f );
-	//prims.push_back( new Plane( vec3( 0.f, 2.5f, 0.f ), vec3( 0.f, -1.f, 0.f ), mat ) );
-	prims.push_back( new Sphere( vec3( 0.f, 102.f, 0.f ), 100.f, mat ) );
+	//// Base plane
+	//mat.type = MaterialType::MIRROR_MAT;
+	//mat.spec = 0.25f;
+	//mat.color = vec3( 0.25f, 0.25f, 0.25f );
+	////prims.push_back( new Plane( vec3( 0.f, 2.5f, 0.f ), vec3( 0.f, -1.f, 0.f ), mat ) );
+	//prims.push_back( new Sphere( vec3( 0.f, 102.f, 0.f ), 100.f, mat ) );
 
-	// Back wall
-	mat.type = MaterialType::DIFFUSE_MAT;
-	mat.color = vec3( 0.75f, 0.75f, 0.75f );
-	//prims.push_back( new Plane( vec3( 0.f, 0.f, 5.0f ), vec3( 0.f, 0.f, -1.f ), mat ) );
-	prims.push_back( new Sphere( vec3( 0.f, 0.f, 105.f ), 100.f, mat ) );
+	//// Back wall
+	//mat.type = MaterialType::DIFFUSE_MAT;
+	//mat.color = vec3( 0.75f, 0.75f, 0.75f );
+	////prims.push_back( new Plane( vec3( 0.f, 0.f, 5.0f ), vec3( 0.f, 0.f, -1.f ), mat ) );
+	//prims.push_back( new Sphere( vec3( 0.f, 0.f, 105.f ), 100.f, mat ) );
 
-	// Glass Sphere
-	Material glassMat;
-	glassMat.type = MaterialType::GLASS_MAT;
-	glassMat.color = vec3( 0.35f, 0.7f, 0.35f );
-	glassMat.spec = 1.f;
-	glassMat.refractionIndex = 1.5f;
-	glassMat.attenuation = 2.5f;
-	prims.push_back( new Sphere( vec3( 0.f, 0.f, 0.f ), .5f, glassMat ) );
+	//// Glass Sphere
+	//Material glassMat;
+	//glassMat.type = MaterialType::GLASS_MAT;
+	//glassMat.color = vec3( 0.35f, 0.7f, 0.35f );
+	//glassMat.spec = 1.f;
+	//glassMat.refractionIndex = 1.5f;
+	//glassMat.attenuation = 2.5f;
+	//prims.push_back( new Sphere( vec3( 0.f, 0.f, 0.f ), .5f, glassMat ) );
 
-	// 3x3 grid of spheres
-	// Top row
-	mat.type = MaterialType::DIFFUSE_MAT;
-	mat.color = vec3( 1.f, 0.f, 0.f );
-	prims.push_back( new Sphere( vec3( -1.f, -1.f, 4.f ), .5f, mat ) );
+	//// 3x3 grid of spheres
+	//// Top row
+	//mat.type = MaterialType::DIFFUSE_MAT;
+	//mat.color = vec3( 1.f, 0.f, 0.f );
+	//prims.push_back( new Sphere( vec3( -1.f, -1.f, 4.f ), .5f, mat ) );
 
-	mat.type = MaterialType::DIFFUSE_MAT;
-	mat.color = vec3( 1.f, 0.33f, 0.33f );
-	prims.push_back( new Sphere( vec3( 0.f, -1.f, 4.f ), .5f, mat ) );
+	//mat.type = MaterialType::DIFFUSE_MAT;
+	//mat.color = vec3( 1.f, 0.33f, 0.33f );
+	//prims.push_back( new Sphere( vec3( 0.f, -1.f, 4.f ), .5f, mat ) );
 
-	mat.type = MaterialType::DIFFUSE_MAT;
-	mat.color = vec3( 1.f, 0.67f, 0.67f );
-	prims.push_back( new Sphere( vec3( 1.f, -1.f, 4.f ), .5f, mat ) );
+	//mat.type = MaterialType::DIFFUSE_MAT;
+	//mat.color = vec3( 1.f, 0.67f, 0.67f );
+	//prims.push_back( new Sphere( vec3( 1.f, -1.f, 4.f ), .5f, mat ) );
 
-	// Mid row
-	mat.type = MaterialType::DIFFUSE_MAT;
-	mat.color = vec3( 0.f, 1.f, 0.f );
-	prims.push_back( new Sphere( vec3( -1.f, 0.f, 4.f ), .5f, mat ) );
+	//// Mid row
+	//mat.type = MaterialType::DIFFUSE_MAT;
+	//mat.color = vec3( 0.f, 1.f, 0.f );
+	//prims.push_back( new Sphere( vec3( -1.f, 0.f, 4.f ), .5f, mat ) );
 
-	mat.type = MaterialType::MIRROR_MAT;
-	mat.spec = 0.5f;
-	mat.color = vec3( 0.33f, 1.f, 0.33f );
-	prims.push_back( new Sphere( vec3( 0.f, 0.f, 4.f ), .5f, mat ) );
+	//mat.type = MaterialType::MIRROR_MAT;
+	//mat.spec = 0.5f;
+	//mat.color = vec3( 0.33f, 1.f, 0.33f );
+	//prims.push_back( new Sphere( vec3( 0.f, 0.f, 4.f ), .5f, mat ) );
 
-	mat.type = MaterialType::DIFFUSE_MAT;
-	mat.color = vec3( 0.67f, 1.f, 0.67f );
-	prims.push_back( new Sphere( vec3( 1.f, 0.f, 4.f ), .5f, mat ) );
+	//mat.type = MaterialType::DIFFUSE_MAT;
+	//mat.color = vec3( 0.67f, 1.f, 0.67f );
+	//prims.push_back( new Sphere( vec3( 1.f, 0.f, 4.f ), .5f, mat ) );
 
-	// Bot Row
-	mat.type = MaterialType::DIFFUSE_MAT;
-	mat.color = vec3( 0.f, 0.f, 1.f );
-	prims.push_back( new Sphere( vec3( -1.f, 1.f, 4.f ), .5f, mat ) );
+	//// Bot Row
+	//mat.type = MaterialType::DIFFUSE_MAT;
+	//mat.color = vec3( 0.f, 0.f, 1.f );
+	//prims.push_back( new Sphere( vec3( -1.f, 1.f, 4.f ), .5f, mat ) );
 
-	mat.type = MaterialType::DIFFUSE_MAT;
-	mat.color = vec3( 0.33f, 0.33f, 1.f );
-	prims.push_back( new Sphere( vec3( 0.f, 1.f, 4.f ), .5f, mat ) );
+	//mat.type = MaterialType::DIFFUSE_MAT;
+	//mat.color = vec3( 0.33f, 0.33f, 1.f );
+	//prims.push_back( new Sphere( vec3( 0.f, 1.f, 4.f ), .5f, mat ) );
 
-	mat.type = MaterialType::DIFFUSE_MAT;
-	mat.color = vec3( 0.67f, 0.67f, 1.f );
-	prims.push_back( new Sphere( vec3( 1.f, 1.f, 4.f ), .5f, mat ) );
+	//mat.type = MaterialType::DIFFUSE_MAT;
+	//mat.color = vec3( 0.67f, 0.67f, 1.f );
+	//prims.push_back( new Sphere( vec3( 1.f, 1.f, 4.f ), .5f, mat ) );
 
 	vector<Light *> lights = vector<Light *>();
 

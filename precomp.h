@@ -11,9 +11,10 @@
 #define SCRHEIGHT 512
 #define TILESIZE 16
 
-//#define LINEAR_TRAVERSE
+// #define LINEAR_TRAVERSE
 #define USE_BVH
-//#define BVH_DEBUG
+#define USE_SAH
+#define BVH_DEBUG
 #define BVHDEPTH 64
 
 #define MAXRAYDEPTH 4

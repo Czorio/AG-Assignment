@@ -21,14 +21,97 @@ struct BVHNode
 		}
 	}
 
+	void calculateSAH( int &bestAxis, float &bestSplit, vector<Primitive *> &bestLeftPrims, vector<Primitive *> &bestRightPrims) 
+	{
+		float side1 = bounds.Extend( 0 );
+		float side2 = bounds.Extend( 1 );
+		float side3 = bounds.Extend( 2 );
+
+		// Calculate the cost of the head
+		float splitCost = FLT_MAX;
+		float minCost = primitives.size() * ( side1 * side2 + side2 * side3 + side3 * side1 );
+		float split;
+		float surfaceLeft, surfaceRight;
+		BVHNode *left, *right;
+		vector<Primitive *> primsLeft, primsRight;
+		//cout << "Cost of node: " << minCost << endl;
+
+		// Loop over the three axis
+		for ( int axis = 0; axis < 3; axis++ )
+		{
+			// Loop over all possible splits (primitive centroids)
+			for ( const auto &p : primitives )
+			{
+				split = p->origin[axis];
+				primsLeft.clear();
+				primsRight.clear();
+				// Count number of primitives in left and right nodes
+				for ( const auto &prim : primitives )
+				{
+					if ( prim->origin[axis] <= split )
+					{
+						primsLeft.push_back( prim );
+					}
+					else
+					{
+						primsRight.push_back( prim );
+					}
+				}
+
+				int countLeft = primsLeft.size();
+				int countRight = primsRight.size();
+
+				// Avoid useless partionings: (to be tested)
+				if ( countLeft <= 1 || countRight <= 1 ) continue;
+
+				left = new BVHNode( primsLeft );
+				right = new BVHNode( primsRight );
+
+				// Calculate sides of the left and right bounding boxes
+				float lside1 = left->bounds.Extend( 0 );
+				float lside2 = left->bounds.Extend( 1 );
+				float lside3 = left->bounds.Extend( 2 );
+
+				float rside1 = right->bounds.Extend( 0 );
+				float rside2 = right->bounds.Extend( 1 );
+				float rside3 = right->bounds.Extend( 2 );
+
+				// Calculate surface area of left and right boxes
+				float surfaceLeft = lside1*lside2 + lside2*lside3 + lside3*lside1;
+				float surfaceRight = rside1*rside2 + rside2*rside3 + rside3*rside1;
+
+				// Calculate cost of split
+				splitCost = surfaceLeft * countLeft + surfaceRight * countRight;
+
+				// Is this split better than the current minimum?
+				if (splitCost < minCost) {
+					minCost = splitCost;
+					bestSplit = split;
+					bestAxis = axis;
+					bestLeftPrims = primsLeft;
+					bestRightPrims = primsRight;
+				}
+			}
+		}
+	}
+
 	void subdivide( int currentDepth )
 	{
 		// Conditions warrant a leaf node
-		if ( ( primitives.size() < 3 ) || ( currentDepth >= BVHDEPTH ) )
+		// For some reason the plain < is buggy with SAH, so <=
+		if ( ( primitives.size() <= 3 ) || ( currentDepth >= BVHDEPTH ) )
 		{
 			return;
 		}
 
+	// http://raytracey.blogspot.com/2016/01/ , Tutorial
+	// https://github.com/straaljager/GPU-path-tracing-tutorial-3/ , Code
+	#ifdef USE_SAH
+		int bestAxis = -1;
+		float bestSplit = FLT_MAX;
+		vector<Primitive *> leftPrims, rightPrims;
+		this->calculateSAH( bestAxis, bestSplit, leftPrims, rightPrims ); // currently bestAxis, bestSplit not used
+	#else
 		// Split aabb on longest axis
 		int longestAxis = bounds.LongestAxis();
 		float center = bounds.Center( longestAxis );
@@ -48,6 +131,8 @@ struct BVHNode
 				rightPrims.push_back( p );
 			}
 		}
+	#endif // USE_SAH
+
 
 		left = new BVHNode( leftPrims );
 		left->subdivide( currentDepth + 1 );
