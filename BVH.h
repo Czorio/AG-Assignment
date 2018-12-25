@@ -61,11 +61,8 @@ struct BVHNode
 				int countLeft = primsLeft.size();
 				int countRight = primsRight.size();
 
-				// Avoid useless partionings: (to be tested)
+				// Avoid useless partionings
 				if ( countLeft <= 1 || countRight <= 1 ) continue;
-
-				left = new BVHNode( primsLeft );
-				right = new BVHNode( primsRight );
 
 				// Calculate sides of the left and right bounding boxes
 				float lside1 = left->bounds.Extend( 0 );

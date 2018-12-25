@@ -14,7 +14,7 @@
 // #define LINEAR_TRAVERSE
 #define USE_BVH
 #define USE_SAH
-#define BVH_DEBUG
+// #define BVH_DEBUG
 #define BVHDEPTH 64
 
 #define MAXRAYDEPTH 4
