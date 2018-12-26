@@ -32,7 +32,7 @@ struct BVHNode
 		float minCost = primitives.size() * ( side1 * side2 + side2 * side3 + side3 * side1 );
 		float split;
 		float surfaceLeft, surfaceRight;
-		BVHNode *left, *right;
+		BVHNode *temp_left, *temp_right;
 		vector<Primitive *> primsLeft, primsRight;
 
 		// Loop over the three axis
@@ -65,18 +65,20 @@ struct BVHNode
 				// if ( countLeft <= 1 || countRight <= 1 ) continue;
 
 				// Update children
-				left = new BVHNode( primsLeft );
-				right = new BVHNode( primsRight );
+				temp_left = new BVHNode( primsLeft );
+				temp_right = new BVHNode( primsRight );
 
 				// Calculate sides of the left and right bounding boxes
-				float lside1 = left->bounds.Extend( 0 );
-				float lside2 = left->bounds.Extend( 1 );
-				float lside3 = left->bounds.Extend( 2 );
+				float lside1 = temp_left->bounds.Extend( 0 );
+				float lside2 = temp_left->bounds.Extend( 1 );
+				float lside3 = temp_left->bounds.Extend( 2 );
 
-				float rside1 = right->bounds.Extend( 0 );
-				float rside2 = right->bounds.Extend( 1 );
-				float rside3 = right->bounds.Extend( 2 );
+				float rside1 = temp_right->bounds.Extend( 0 );
+				float rside2 = temp_right->bounds.Extend( 1 );
+				float rside3 = temp_right->bounds.Extend( 2 );
 
+				// Deallocate memory
+				delete temp_left, temp_right;
 
 				// Calculate surface area of left and right boxes
 				float surfaceLeft = lside1*lside2 + lside2*lside3 + lside3*lside1;
@@ -101,7 +103,6 @@ struct BVHNode
 	void subdivide( int currentDepth )
 	{
 		// Conditions warrant a leaf node
-		// For some reason the plain < is buggy with SAH, so <=
 		if ( ( primitives.size() < 3 ) || ( currentDepth >= BVHDEPTH ) )
 		{
 			return;
