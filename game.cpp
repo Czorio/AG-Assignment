@@ -1,105 +1,71 @@
 #include "precomp.h" // include (only) this in every .cpp file
 
 Renderer *renderer;
+int noPrim;
+int noLight;
 
 // -----------------------------------------------------------
 // Initialize the application
 // -----------------------------------------------------------
 void Game::Init()
 {
-	Camera cam = Camera( vec3( 0.f, 0.f, -2.f ), vec3( 0.f, 0.f, 0.f ), vec3( 0.f, -1.f, 0.f ), PI / 4, ( (float)SCRWIDTH / (float)SCRHEIGHT ) );
+	Camera cam = Camera( vec3( 0.f, -1.5f, -2.f ), vec3( 0.f, -1.5f, 0.f ), vec3( 0.f, -1.f, 0.f ), PI / 4, ( (float)SCRWIDTH / (float)SCRHEIGHT ) );
 
 	Material mat;
 	mat.type = MaterialType::DIFFUSE_MAT;
-	mat.color = vec3( 0.75f, 0.5f, 0.75f );
-	
-	vector<Primitive *> scene = loadOBJ( "assets/robot.obj", mat );
+	mat.spec = 0.5f;
+	mat.attenuation = 0.4f;
+	mat.refractionIndex = 1.41f;
+	mat.color = vec3( 0.75f, 0.25f, 0.25f );
 
-	vector<Primitive *> prims;
-	//// Base plane
-	//mat.type = MaterialType::MIRROR_MAT;
-	//mat.spec = 0.25f;
-	//mat.color = vec3( 0.25f, 0.25f, 0.25f );
-	////prims.push_back( new Plane( vec3( 0.f, 2.5f, 0.f ), vec3( 0.f, -1.f, 0.f ), mat ) );
-	//prims.push_back( new Sphere( vec3( 0.f, 102.f, 0.f ), 100.f, mat ) );
+	vector<Primitive *> scene = loadOBJ( "assets/Robot.obj", mat );
 
-	//// Back wall
-	//mat.type = MaterialType::DIFFUSE_MAT;
-	//mat.color = vec3( 0.75f, 0.75f, 0.75f );
-	////prims.push_back( new Plane( vec3( 0.f, 0.f, 5.0f ), vec3( 0.f, 0.f, -1.f ), mat ) );
-	//prims.push_back( new Sphere( vec3( 0.f, 0.f, 105.f ), 100.f, mat ) );
+	// Base plane
+	mat.type = MaterialType::MIRROR_MAT;
+	mat.spec = 0.5f;
+	mat.color = vec3( 0.125f, 0.125f, 0.125f );
+	scene.push_back( new Sphere( vec3( 0.f, 100.f, 0.f ), 100.f, mat ) );
 
-	//// Glass Sphere
-	//Material glassMat;
-	//glassMat.type = MaterialType::GLASS_MAT;
-	//glassMat.color = vec3( 0.35f, 0.7f, 0.35f );
-	//glassMat.spec = 1.f;
-	//glassMat.refractionIndex = 1.5f;
-	//glassMat.attenuation = 2.5f;
-	//prims.push_back( new Sphere( vec3( 0.f, 0.f, 0.f ), .5f, glassMat ) );
-
-	//// 3x3 grid of spheres
-	//// Top row
-	//mat.type = MaterialType::DIFFUSE_MAT;
-	//mat.color = vec3( 1.f, 0.f, 0.f );
-	//prims.push_back( new Sphere( vec3( -1.f, -1.f, 4.f ), .5f, mat ) );
-
-	//mat.type = MaterialType::DIFFUSE_MAT;
-	//mat.color = vec3( 1.f, 0.33f, 0.33f );
-	//prims.push_back( new Sphere( vec3( 0.f, -1.f, 4.f ), .5f, mat ) );
-
-	//mat.type = MaterialType::DIFFUSE_MAT;
-	//mat.color = vec3( 1.f, 0.67f, 0.67f );
-	//prims.push_back( new Sphere( vec3( 1.f, -1.f, 4.f ), .5f, mat ) );
-
-	//// Mid row
-	//mat.type = MaterialType::DIFFUSE_MAT;
-	//mat.color = vec3( 0.f, 1.f, 0.f );
-	//prims.push_back( new Sphere( vec3( -1.f, 0.f, 4.f ), .5f, mat ) );
-
-	//mat.type = MaterialType::MIRROR_MAT;
-	//mat.spec = 0.5f;
-	//mat.color = vec3( 0.33f, 1.f, 0.33f );
-	//prims.push_back( new Sphere( vec3( 0.f, 0.f, 4.f ), .5f, mat ) );
-
-	//mat.type = MaterialType::DIFFUSE_MAT;
-	//mat.color = vec3( 0.67f, 1.f, 0.67f );
-	//prims.push_back( new Sphere( vec3( 1.f, 0.f, 4.f ), .5f, mat ) );
-
-	//// Bot Row
-	//mat.type = MaterialType::DIFFUSE_MAT;
-	//mat.color = vec3( 0.f, 0.f, 1.f );
-	//prims.push_back( new Sphere( vec3( -1.f, 1.f, 4.f ), .5f, mat ) );
-
-	//mat.type = MaterialType::DIFFUSE_MAT;
-	//mat.color = vec3( 0.33f, 0.33f, 1.f );
-	//prims.push_back( new Sphere( vec3( 0.f, 1.f, 4.f ), .5f, mat ) );
-
-	//mat.type = MaterialType::DIFFUSE_MAT;
-	//mat.color = vec3( 0.67f, 0.67f, 1.f );
-	//prims.push_back( new Sphere( vec3( 1.f, 1.f, 4.f ), .5f, mat ) );
+	// Back wall
+	mat.type = MaterialType::DIFFUSE_MAT;
+	mat.color = vec3( 0.25f, 0.25f, 0.75f );
+	scene.push_back( new Sphere( vec3( 0.f, 0.f, 105.f ), 100.f, mat ) );
 
 	vector<Light *> lights = vector<Light *>();
 
-	Light *sun = new Light();
-	sun->type = LightType::DIRECTIONAL_LIGHT;
-	sun->color = vec3( 1.f, 1.f, 1.f );
-	sun->intensity = 1.f;
-	sun->fov = PI / 16;
-	sun->direction = vec3( 0.f, 1.f, 1.f );
-	sun->origin = vec3( 0.f, 0.f, 0.f );
-	lights.push_back( sun );
+	// Key light
+	Light *key = new Light();
+	key->type = LightType::SPOT_LIGHT;
+	key->color = vec3( 1.f, 1.f, 1.f );
+	key->intensity = 15.f;
+	key->fov = PI / 8;
+	key->direction = vec3( -1.f, 0.f, 1.f );
+	key->origin = vec3( 3.5f, -1.5f, -3.5f );
+	lights.push_back( key );
 
-	Light *spot = new Light();
-	spot->type = LightType::SPOT_LIGHT;
-	spot->color = vec3( 1.f, 1.f, 1.f );
-	spot->intensity = 25.f;
-	spot->fov = PI / 8;
-	spot->direction = vec3( 0.f, 0.f, 1.f );
-	spot->origin = vec3( 0.f, 0.f, -5.f );
-	lights.push_back( spot );
+	// fill light
+	Light *fill = new Light();
+	fill->type = LightType::SPOT_LIGHT;
+	fill->color = vec3( 1.f, 1.f, 1.f );
+	fill->intensity = 7.5f;
+	fill->fov = PI / 4;
+	fill->direction = vec3( 1.f, 0.f, 1.f );
+	fill->origin = vec3( -3.5f, -1.5f, -3.5f );
+	lights.push_back( fill );
+
+	// Back light
+	Light *back = new Light();
+	back->type = LightType::SPOT_LIGHT;
+	back->color = vec3( 1.f, 1.f, 1.f );
+	back->intensity = 7.5f;
+	back->fov = PI / 4;
+	back->direction = vec3( -1.f, 0.f, -1.f );
+	back->origin = vec3( 3.5f, -1.5f, 3.5f );
+	lights.push_back( back );
 
 	renderer = new Renderer( scene );
+	noPrim = scene.size();
+	noLight = lights.size();
 	renderer->setCamera( cam );
 	renderer->setLights( lights );
 }
@@ -205,7 +171,7 @@ void Game::Tick( float deltaTime )
 
 	// Display
 	screen->SetBuffer( renderer->getOutput() );
-	screen->Print( ( "FPS: " + to_string( fps ) ).c_str(), 2, 2, 0xFFFFFF );
+	screen->Print( ( "FPS: " + to_string( fps ) + " " + to_string( noPrim ) + " Primitives, " + to_string( noLight ) + " Lights" ).c_str(), 2, 2, 0xFFFFFF );
 	if ( !showHelp )
 	{
 		screen->Print( "Press \"h\" for controls", 2, 8, 0xFFFFFF );
