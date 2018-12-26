@@ -16,6 +16,7 @@
 #define USE_SAH
 // #define BVH_DEBUG
 #define BVHDEPTH 64
+#define BINCOUNT 32 // this can also be reduced for faster construction
 
 #define MAXRAYDEPTH 4
 #define SAMPLES 1

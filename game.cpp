@@ -13,7 +13,7 @@ void Game::Init()
 	mat.type = MaterialType::DIFFUSE_MAT;
 	mat.color = vec3( 0.75f, 0.5f, 0.75f );
 	
-	vector<Primitive *> scene = loadOBJ( "assets/monkey.obj", mat );
+	vector<Primitive *> scene = loadOBJ( "assets/robot.obj", mat );
 
 	vector<Primitive *> prims;
 	//// Base plane

@@ -34,17 +34,17 @@ struct BVHNode
 		float surfaceLeft, surfaceRight;
 		BVHNode *left, *right;
 		vector<Primitive *> primsLeft, primsRight;
-		//cout << "Cost of node: " << minCost << endl;
 
 		// Loop over the three axis
 		for ( int axis = 0; axis < 3; axis++ )
 		{
 			// Loop over all possible splits (primitive centroids)
-			for ( const auto &p : primitives )
+			for ( int bin=1; bin<BINCOUNT; bin++ )
 			{
-				split = p->origin[axis];
+				split = bounds.bmin[axis] + bounds.Extend(axis) * bin / BINCOUNT;
 				primsLeft.clear();
 				primsRight.clear();
+
 				// Count number of primitives in left and right nodes
 				for ( const auto &prim : primitives )
 				{
@@ -61,8 +61,12 @@ struct BVHNode
 				int countLeft = primsLeft.size();
 				int countRight = primsRight.size();
 
-				// Avoid useless partionings
-				if ( countLeft <= 1 || countRight <= 1 ) continue;
+				// Avoid useless partionings - need to check
+				// if ( countLeft <= 1 || countRight <= 1 ) continue;
+
+				// Update children
+				left = new BVHNode( primsLeft );
+				right = new BVHNode( primsRight );
 
 				// Calculate sides of the left and right bounding boxes
 				float lside1 = left->bounds.Extend( 0 );
@@ -72,6 +76,7 @@ struct BVHNode
 				float rside1 = right->bounds.Extend( 0 );
 				float rside2 = right->bounds.Extend( 1 );
 				float rside3 = right->bounds.Extend( 2 );
+
 
 				// Calculate surface area of left and right boxes
 				float surfaceLeft = lside1*lside2 + lside2*lside3 + lside3*lside1;
@@ -91,12 +96,13 @@ struct BVHNode
 			}
 		}
 	}
+	
 
 	void subdivide( int currentDepth )
 	{
 		// Conditions warrant a leaf node
 		// For some reason the plain < is buggy with SAH, so <=
-		if ( ( primitives.size() <= 3 ) || ( currentDepth >= BVHDEPTH ) )
+		if ( ( primitives.size() < 3 ) || ( currentDepth >= BVHDEPTH ) )
 		{
 			return;
 		}
