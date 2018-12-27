@@ -3,8 +3,8 @@ Mathijs de Boer (5686857)
 Konstantinos Ntatsis (6591884)
 
 -- ASSIGNMENT 2 --
-NOTE:
-Running in Win32 works x64, however seems to not play nice with the SAH and Binning.
+NOTE TO RUN:
+Running in Win32 works. x64, however seems to not play nice with the SAH and Binning.
 
 Passing Grade Requirements:
 -	Implemented BVH over >10k primitives <- Mathijs
