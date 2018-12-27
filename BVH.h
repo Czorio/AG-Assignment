@@ -29,8 +29,9 @@ struct BVHNode
 			return;
 		}
 
-// http://raytracey.blogspot.com/2016/01/ , Tutorial
-// https://github.com/straaljager/GPU-path-tracing-tutorial-3/ , Code
+		// http://raytracey.blogspot.com/2016/01/ , Tutorial
+		// https://github.com/straaljager/GPU-path-tracing-tutorial-3/ , Code
+
 #ifdef USE_SAH
 		int bestAxis = -1;
 		float bestSplit = FLT_MAX;
@@ -66,6 +67,7 @@ struct BVHNode
 
 		// We are no longer a leaf
 		isLeaf = false;
+		primitives.clear();
 	}
 
 	Hit intersect( const Ray &r ) const
@@ -162,6 +164,26 @@ struct BVHNode
 	// Based on Slab method, as described on https://tavianator.com/fast-branchless-raybounding-box-intersections/
 	inline bool rayIntersectsBounds( const aabb &bounds, const Ray &r ) const
 	{
+#if 0
+		__m128 tmin4 = _mm_setr_ps( -FLT_MAX, -FLT_MAX, -FLT_MAX, 0 );
+		__m128 tmax4 = _mm_setr_ps( FLT_MAX, FLT_MAX, FLT_MAX, 0 );
+
+		__m128 rayOri = _mm_setr_ps( r.origin[0], r.origin[0], r.origin[0], 0.f );
+		__m128 rayDir = _mm_setr_ps( r.direction[0], r.direction[0], r.direction[0], 0.f );
+
+		__m128 t1_4 = _mm_div_ps( _mm_sub_ps( bounds.bmin4, rayOri ), rayDir );
+		__m128 t2_4 = _mm_div_ps( _mm_sub_ps( bounds.bmax4, rayOri ), rayDir );
+
+		__m128 le_mask = _mm_cmpnle_ps( rayOri, bounds.bmin4 );
+		__m128 ge_mask = _mm_cmpnge_ps( rayOri, bounds.bmax4 );
+
+		tmin4 = _mm_max_ps( tmin4, _mm_min_ps( t1_4, t2_4 ) );
+		tmax4 = _mm_min_ps( tmax4, _mm_max_ps( t1_4, t2_4 ) );
+
+		// TODO: Figure out how to check if masks contain a true value
+		// TODO: Figure out how to check last condition
+
+#else
 		float tmin = -FLT_MAX, tmax = FLT_MAX;
 
 		for ( int i = 0; i < 3; ++i )
@@ -182,6 +204,7 @@ struct BVHNode
 		}
 
 		return tmax > tmin && tmax > 0.0;
+#endif
 	}
 
 	void calculateSAH( int &bestAxis, float &bestSplit, vector<Primitive *> &bestLeftPrims, vector<Primitive *> &bestRightPrims )
@@ -209,7 +232,7 @@ struct BVHNode
 				primsRight.clear();
 
 				// Count number of primitives in left and right nodes
-				for ( const auto &prim : primitives )
+				for ( Primitive *prim : primitives )
 				{
 					if ( prim->origin[axis] <= split )
 					{
@@ -242,6 +265,8 @@ struct BVHNode
 
 				// Deallocate memory
 				delete temp_left, temp_right;
+				temp_left = nullptr;
+				temp_right = nullptr;
 
 				// Calculate surface area of left and right boxes
 				float surfaceLeft = lside1 * lside2 + lside2 * lside3 + lside3 * lside1;
@@ -256,7 +281,9 @@ struct BVHNode
 					minCost = splitCost;
 					bestSplit = split;
 					bestAxis = axis;
+					bestLeftPrims.clear();
 					bestLeftPrims = primsLeft;
+					bestRightPrims.clear();
 					bestRightPrims = primsRight;
 				}
 			}
