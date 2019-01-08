@@ -7,6 +7,8 @@
 // Prevent expansion clashes (when using std::min and std::max):
 #define NOMINMAX
 
+#define MAX_IDLE_FPS 60.f
+
 #define SCRWIDTH 512
 #define SCRHEIGHT 512
 #define TILESIZE 64
@@ -19,7 +21,7 @@
 #define BINCOUNT 16 // this can also be reduced for faster construction
 
 #define MAXRAYDEPTH 4
-#define SAMPLES 1
+#define SAMPLES 8
 
 #define SHADOWBIAS 0.001f
 #define REFLECTIONBIAS 0.001f

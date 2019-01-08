@@ -2,6 +2,14 @@
 
 Renderer::Renderer( vector<Primitive *> primitives ) : bvh( BVH( primitives ) )
 {
+	currentSample = 1;
+
+	prebuffer = new vec3[SCRWIDTH * SCRHEIGHT];
+	for ( unsigned i = 0; i < SCRWIDTH * SCRHEIGHT; i++ )
+	{
+		prebuffer[i] = vec3();
+	}
+
 	buffer = new Pixel[SCRWIDTH * SCRHEIGHT];
 
 	for ( unsigned y = 0; y < SCRHEIGHT; y += TILESIZE )
@@ -28,29 +36,40 @@ Renderer::~Renderer()
 		delete lights[i];
 	}
 
+	delete[] prebuffer;
+	prebuffer = nullptr;
+
 	delete[] buffer;
 	buffer = nullptr;
 }
 
 void Renderer::renderFrame()
 {
-#pragma omp parallel for
-	for ( int i = 0; i < tiles.size(); i++ )
+	if ( currentSample < SAMPLES )
 	{
-		int x = get<0>( tiles[i] );
-		int y = get<1>( tiles[i] );
-
-		for ( unsigned dy = 0; dy < TILESIZE; dy++ )
+#pragma omp parallel for
+		for ( int i = 0; i < tiles.size(); i++ )
 		{
-			for ( unsigned dx = 0; dx < TILESIZE; dx++ )
+			int x = get<0>( tiles[i] );
+			int y = get<1>( tiles[i] );
+
+			for ( unsigned dy = 0; dy < TILESIZE; dy++ )
 			{
-				if ( ( x + dx ) < SCRWIDTH && ( y + dy ) < SCRHEIGHT )
+				for ( unsigned dx = 0; dx < TILESIZE; dx++ )
 				{
-					vec3 color = shootRay( x + dx, y + dy, MAXRAYDEPTH );
-					buffer[( y + dy ) * SCRWIDTH + ( x + dx )] = rgb( color );
+					if ( ( x + dx ) < SCRWIDTH && ( y + dy ) < SCRHEIGHT )
+					{
+						prebuffer[( y + dy ) * SCRWIDTH + ( x + dx )] += shootRay( x + dx, y + dy, MAXRAYDEPTH );
+					}
 				}
 			}
 		}
+		currentSample++;
+	}
+	else
+	{
+		// Prevent stupidly high framerate
+		Sleep( ( 1.f / MAX_IDLE_FPS ) * 1000 );
 	}
 }
 
@@ -72,17 +91,27 @@ Camera *Renderer::getCamera()
 // As preparation for iterative rendering
 void Renderer::moveCam( vec3 vec )
 {
+	invalidatePrebuffer();
 	cam.move( vec );
 }
 
 // As preparation for iterative rendering
 void Renderer::rotateCam( vec3 vec )
 {
+	invalidatePrebuffer();
 	cam.rotate( vec );
 }
 
 Pixel *Renderer::getOutput() const
 {
+	// currentSample - 1 because it is increased in the renderFrame() function in preparation of the next frame.
+	// Unfortunately, we are getting the current frame, so we get currentSample - 1.
+	float importance = 1.f / float( currentSample - 1 );
+	for ( unsigned i = 0; i < SCRWIDTH * SCRHEIGHT; i++ )
+	{
+		buffer[i] = rgb( prebuffer[i] * importance );
+	}
+
 	return buffer;
 }
 
@@ -346,6 +375,16 @@ vec3 Renderer::shadowRay( const Hit &h, const Light *l ) const
 	{
 		return vec3();
 	}
+}
+
+void Renderer::invalidatePrebuffer()
+{
+	for ( size_t i = 0; i < SCRWIDTH * SCRHEIGHT; i++ )
+	{
+		prebuffer[i] = vec3();
+	}
+
+	currentSample = 1;
 }
 
 Pixel Renderer::rgb( float r, float g, float b ) const

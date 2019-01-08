@@ -23,11 +23,16 @@ class Renderer
 	vector<Primitive *> primitives;
 	const BVH bvh;
 	vector<Light *> lights;
+
+	unsigned currentSample;
+	vec3 *prebuffer;
 	Pixel *buffer;
 
 	vec3 shootRay( unsigned x, unsigned y, unsigned depth ) const;
 	vec3 shootRay( const Ray &r, unsigned depth ) const;
 	vec3 shadowRay( const Hit &h, const Light *l ) const;
+
+	void invalidatePrebuffer();
 
 	// rgb to Pixel
 	Pixel rgb( float r, float g, float b ) const;

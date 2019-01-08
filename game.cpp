@@ -18,13 +18,13 @@ void Game::Init()
 	mat.refractionIndex = 1.41f;
 	mat.color = vec3( 0.75f, 0.25f, 0.25f );
 
-	vector<Primitive *> scene = loadOBJ( "assets/Robot.obj", mat );
+	vector<Primitive *> scene = loadOBJ( "assets/Monkey.obj", mat );
 
 	// Base plane
 	mat.type = MaterialType::MIRROR_MAT;
 	mat.spec = 0.5f;
 	mat.color = vec3( 0.125f, 0.125f, 0.125f );
-	scene.push_back( new Sphere( vec3( 0.f, 100.f, 0.f ), 100.f, mat ) );
+	scene.push_back( new Sphere( vec3( 0.f, 101.5f, 0.f ), 100.f, mat ) );
 
 	// Back wall
 	mat.type = MaterialType::DIFFUSE_MAT;
