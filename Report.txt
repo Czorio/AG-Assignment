@@ -11,6 +11,7 @@ Passing Grade Requirements:
 	-	Scene contains ~92k triangles and 3 lights
 -	Ray/Scene intersection through BVH <- Mathijs
 -	Performance improvements over linear traversal
+	-	Yes
 
 Additional Points:
 -	SAH <- Konstantinos
