@@ -34,14 +34,16 @@ class Camera
 		Ray r;
 
 		// Randomize origin for DoF
-		vec3 randVec = rotateVec( up, forward, Rand( 1.f ) );
+		vec3 randVec = rotateVec( up, forward, Rand( 2 * PI ) );
 		r.origin = origin + randVec * Rand( aperture );
 
 		// Add some AA
-		float norm_x = ( 2.0f * ( x - 0.5f + Rand( 1.f ) ) ) / SCRWIDTH - 1.0f;
-		float norm_y = ( -2.0f * ( y - 0.5f + Rand( 1.f ) ) ) / SCRHEIGHT + 1.0f;
+		float norm_x = ( ( float( x ) + ( -1.f + Rand( 1.f ) ) ) / float( SCRWIDTH ) ) - 0.5f;
+		float norm_y = ( ( float( y ) + ( -1.f + Rand( 1.f ) ) ) / float( SCRHEIGHT ) ) - 0.5f;
 
-		r.direction = ( forward * focalLength * focusDistance + norm_x * width * right * focusDistance + norm_y * height * up * focusDistance ).normalized();
+		vec3 imagePoint = norm_x * ( focusDistance / 2 ) * right + norm_y * ( focusDistance / 2 ) * up + origin + forward * ( focusDistance / 2 ) * focalLength;
+
+		r.direction = imagePoint - r.origin;
 
 		return r;
 	}
@@ -67,7 +69,7 @@ class Camera
 		}
 	}
 
-	void changeAperture(float value, bool relativeChange)
+	void changeAperture( float value, bool relativeChange )
 	{
 		if ( relativeChange )
 		{
