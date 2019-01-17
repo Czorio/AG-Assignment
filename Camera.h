@@ -41,7 +41,7 @@ class Camera
 		float norm_x = ( ( float( x ) + ( -1.f + Rand( 1.f ) ) ) / float( SCRWIDTH ) ) - 0.5f;
 		float norm_y = ( ( float( y ) + ( -1.f + Rand( 1.f ) ) ) / float( SCRHEIGHT ) ) - 0.5f;
 
-		vec3 imagePoint = norm_x * ( focusDistance / 2 ) * right + norm_y * ( focusDistance / 2 ) * up + origin + forward * ( focusDistance / 2 ) * focalLength;
+		vec3 imagePoint = norm_x * right * ( focusDistance * 0.5f ) * ( 1 / focalLength ) + norm_y * up * ( focusDistance * 0.5f ) * ( 1 / focalLength ) + origin + forward * focusDistance;
 
 		r.direction = imagePoint - r.origin;
 
