@@ -13,9 +13,13 @@ class Camera
 	float width;
 	float height;
 
+	float aperture;
+	float focalLength;
+	float focusDistance;
+
 	Camera() : origin( vec3() ), forward( vec3() ), up( vec3() ), right( vec3() ) {}
 
-	Camera( vec3 origin, vec3 target, vec3 upGuide, float fov, float aspect ) : origin( origin )
+	Camera( vec3 origin, vec3 target, vec3 upGuide, float fov, float aspect, float aperture, float focalLength, float focusDistance ) : origin( origin ), aperture( aperture ), focalLength( focalLength ), focusDistance( focusDistance )
 	{
 		forward = ( target - origin ).normalized();
 		right = forward.cross( upGuide ).normalized();
@@ -28,12 +32,16 @@ class Camera
 	Ray getRay( unsigned x, unsigned y ) const
 	{
 		Ray r;
-		r.origin = origin;
 
-		float norm_x = ( 2.0f * x ) / SCRWIDTH - 1.0f;
-		float norm_y = ( -2.0f * y ) / SCRHEIGHT + 1.0f;
+		// Randomize origin for DoF
+		vec3 randVec = rotateVec( up, forward, Rand( 1.f ) );
+		r.origin = origin + randVec * Rand( aperture );
 
-		r.direction = ( forward + norm_x * width * right + norm_y * height * up ).normalized();
+		// Add some AA
+		float norm_x = ( 2.0f * ( x - 0.5f + Rand( 1.f ) ) ) / SCRWIDTH - 1.0f;
+		float norm_y = ( -2.0f * ( y - 0.5f + Rand( 1.f ) ) ) / SCRHEIGHT + 1.0f;
+
+		r.direction = ( forward * focalLength * focusDistance + norm_x * width * right * focusDistance + norm_y * height * up * focusDistance ).normalized();
 
 		return r;
 	}
@@ -45,7 +53,7 @@ class Camera
 	}
 
 	// Stack overflow: https://stackoverflow.com/questions/42421611/3d-vector-rotation-in-c
-	vec3 rotateVec( const vec3 &v, const vec3 &axis, float angle )
+	vec3 rotateVec( const vec3 &v, const vec3 &axis, float angle ) const
 	{
 		float cos_angle = cos( angle );
 		float sin_angle = sin( angle );

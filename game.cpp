@@ -9,7 +9,7 @@ int noLight;
 // -----------------------------------------------------------
 void Game::Init()
 {
-	Camera cam = Camera( vec3( 0.f, -1.5f, -2.f ), vec3( 0.f, -1.5f, 0.f ), vec3( 0.f, -1.f, 0.f ), PI / 4, ( (float)SCRWIDTH / (float)SCRHEIGHT ) );
+	Camera cam = Camera( vec3( 0.f, -1.5f, -2.f ), vec3( 0.f, -1.5f, 0.f ), vec3( 0.f, -1.f, 0.f ), PI / 4, ( (float)SCRWIDTH / (float)SCRHEIGHT ), 0.f, 2.f , 1.5f );
 
 	Material mat;
 	mat.type = MaterialType::DIFFUSE_MAT;
