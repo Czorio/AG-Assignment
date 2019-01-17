@@ -143,6 +143,7 @@
     <ClCompile Include="game.cpp" />
     <ClCompile Include="OBJLoader.cpp" />
     <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="Sample.cpp" />
     <ClCompile Include="surface.cpp" />
     <ClCompile Include="template.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -160,6 +161,7 @@
     <ClInclude Include="Primitive.h" />
     <ClInclude Include="Ray.h" />
     <ClInclude Include="Renderer.h" />
+    <ClInclude Include="Sample.h" />
     <ClInclude Include="surface.h" />
     <ClInclude Include="template.h" />
     <ClInclude Include="tiny_obj_loader.h" />

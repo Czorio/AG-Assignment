@@ -4,70 +4,36 @@ Renderer *renderer;
 int noPrim;
 int noLight;
 
-	// -----------------------------------------------------------
+// -----------------------------------------------------------
 // Initialize the application
 // -----------------------------------------------------------
 void Game::Init()
 {
-	Camera cam = Camera( vec3( 0.f, -1.5f, -2.f ), vec3( 0.f, -1.5f, 0.f ), vec3( 0.f, -1.f, 0.f ), PI / 4, ( (float)SCRWIDTH / (float)SCRHEIGHT ) );
+	Camera cam = Camera( vec3( 0.f, 0.f, 0.f ), vec3( 0.f, 0.f, 10.f ), vec3( 0.f, -1.f, 0.f ), PI / 4, ( (float)SCRWIDTH / (float)SCRHEIGHT ) );
 
 	Material mat;
-	mat.type = MaterialType::DIFFUSE_MAT;
-	mat.spec = 0.5f;
-	mat.attenuation = 0.4f;
-	mat.refractionIndex = 1.41f;
-	mat.color = vec3( 0.75f, 0.25f, 0.25f );
+	mat.type = MaterialType::LAMBERTIAN_MAT;
+	mat.albedo = vec3( 0.75f, 0.25f, 0.25f );
+	
+	vector<Primitive *> scene;
+	scene.push_back( new Sphere( vec3( 0.f, 10.f, 10.f ) , 5.f, mat ));
+	scene.push_back( new Sphere( vec3( 0.f, -10.f, 10.f ) , 5.f, mat ));
+	//vector<Primitive *> scene = loadOBJ( "assets/Robot.obj", mat );;
+	//vector<Light *> lights = vector<Light *>();
 
-	vector<Primitive *> scene = loadOBJ( "assets/Monkey.obj", mat );
+	// Area light
+	mat.albedo = vec3( 1.f, 1.f, 1.f );
+	mat.emission = vec3( 1.5f, 1.5f, 1.5f );
+	mat.type = MaterialType::EMIT_MAT;
 
-	// Base plane
-	mat.type = MaterialType::MIRROR_MAT;
-	mat.spec = 0.5f;
-	mat.color = vec3( 0.125f, 0.125f, 0.125f );
-	scene.push_back( new Sphere( vec3( 0.f, 101.5f, 0.f ), 100.f, mat ) );
-
-	// Back wall
-	mat.type = MaterialType::DIFFUSE_MAT;
-	mat.color = vec3( 0.25f, 0.25f, 0.75f );
-	scene.push_back( new Sphere( vec3( 0.f, 0.f, 105.f ), 100.f, mat ) );
-
-	vector<Light *> lights = vector<Light *>();
-
-	// Key light
-	Light *key = new Light();
-	key->type = LightType::SPOT_LIGHT;
-	key->color = vec3( 1.f, 1.f, 1.f );
-	key->intensity = 15.f;
-	key->fov = PI / 8;
-	key->direction = vec3( -1.f, 0.f, 1.f );
-	key->origin = vec3( 3.5f, -1.5f, -3.5f );
-	lights.push_back( key );
-
-	// fill light
-	Light *fill = new Light();
-	fill->type = LightType::SPOT_LIGHT;
-	fill->color = vec3( 1.f, 1.f, 1.f );
-	fill->intensity = 7.5f;
-	fill->fov = PI / 4;
-	fill->direction = vec3( 1.f, 0.f, 1.f );
-	fill->origin = vec3( -3.5f, -1.5f, -3.5f );
-	lights.push_back( fill );
-
-	// Back light
-	Light *back = new Light();
-	back->type = LightType::SPOT_LIGHT;
-	back->color = vec3( 1.f, 1.f, 1.f );
-	back->intensity = 7.5f;
-	back->fov = PI / 4;
-	back->direction = vec3( -1.f, 0.f, -1.f );
-	back->origin = vec3( 3.5f, -1.5f, 3.5f );
-	lights.push_back( back );
-
+	scene.push_back( new Sphere(vec3(-3.f, 0.f, 10.f), 1.f, mat ));
+	scene.push_back( new Sphere(vec3(0.f, 0.f, 10.f), 1.f, mat ));
+	scene.push_back( new Sphere(vec3(3.f, 0.f, 10.f), 1.f, mat ));
 	renderer = new Renderer( scene );
 	noPrim = scene.size();
-	noLight = lights.size();
+	noLight = 3; // lights.size();
 	renderer->setCamera( cam );
-	renderer->setLights( lights );
+	// renderer->setLights( lights );
 }
 
 // -----------------------------------------------------------
@@ -161,7 +127,7 @@ void Game::Tick( float deltaTime )
 	}
 
 	// clear the graphics window
-	screen->Clear( 0 );
+	screen->Clear( 0 );   /// I COMMENTED THAT OUT
 
 	// Render the frame
 	timer t = timer();
