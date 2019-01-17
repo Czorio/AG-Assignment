@@ -46,6 +46,55 @@ class Camera
 		return r;
 	}
 
+	// Relative zoom is true when you simply want to zoom in or out
+	// Relative zoom is false when you want to jump to a specific value
+	void zoom( float value, bool relativeZoom )
+	{
+		if ( relativeZoom )
+		{
+			if ( focalLength + value > 0.f )
+			{
+				focalLength += value;
+			}
+			else
+			{
+				focalLength = 0.01f;
+			}
+		}
+		else
+		{
+			focalLength = value;
+		}
+	}
+
+	void changeAperture(float value, bool relativeChange)
+	{
+		if ( relativeChange )
+		{
+			if ( aperture + value > 0.f )
+			{
+				aperture += value;
+			}
+			else
+			{
+				aperture = 0.f;
+			}
+		}
+		else
+		{
+			aperture = value;
+		}
+	}
+
+	Ray focusRay()
+	{
+		Ray r;
+		r.origin = origin;
+		r.direction = forward;
+
+		return r;
+	}
+
 	// Own code
 	void move( vec3 v )
 	{
