@@ -14,24 +14,53 @@ void Game::Init()
 	Material mat;
 	mat.type = MaterialType::LAMBERTIAN_MAT;
 	mat.albedo = vec3( 0.75f, 0.25f, 0.25f );
-	
+	mat.emission = vec3( 0.f, 0.f, 0.f );
+
 	vector<Primitive *> scene;
-	scene.push_back( new Sphere( vec3( 0.f, 10.f, 10.f ) , 5.f, mat ));
-	scene.push_back( new Sphere( vec3( 0.f, -10.f, 10.f ) , 5.f, mat ));
+	//scene.push_back( new Sphere( vec3( 0.f, 10.f, 10.f ) , 5.f, mat ));
+	//scene.push_back( new Sphere( vec3( 0.f, -10.f, 10.f ) , 5.f, mat ));
 	//vector<Primitive *> scene = loadOBJ( "assets/Robot.obj", mat );;
 	//vector<Light *> lights = vector<Light *>();
 
 	// Area light
+	//mat.albedo = vec3( 1.f, 1.f, 1.f );
+	//mat.emission = vec3( 1.5f, 1.5f, 1.5f );
+	//mat.type = MaterialType::EMIT_MAT;
+	//scene.push_back( new Sphere(vec3(-3.f, 0.f, 10.f), 1.f, mat ));
+	//scene.push_back( new Sphere(vec3(0.f, 0.f, 10.f), 1.f, mat ));
+	//scene.push_back( new Sphere(vec3(3.f, 0.f, 10.f), 1.f, mat ));
+	
+	// Light
 	mat.albedo = vec3( 1.f, 1.f, 1.f );
-	mat.emission = vec3( 1.5f, 1.5f, 1.5f );
+	mat.emission = vec3( 2.2f, 1.8f, 1.5f );
 	mat.type = MaterialType::EMIT_MAT;
+	scene.push_back( new Sphere( vec3( 0.f, -10.f, 15.f ), 3.f, mat ) );
 
-	scene.push_back( new Sphere(vec3(-3.f, 0.f, 10.f), 1.f, mat ));
-	scene.push_back( new Sphere(vec3(0.f, 0.f, 10.f), 1.f, mat ));
-	scene.push_back( new Sphere(vec3(3.f, 0.f, 10.f), 1.f, mat ));
+	// Spheres
+	mat.type = MaterialType::LAMBERTIAN_MAT;
+	mat.albedo = vec3( 0.25f, 0.25f, 0.25f );
+	mat.emission = vec3( 0.f, 0.f, 0.f );
+	scene.push_back( new Sphere( vec3( 0.f, 1e5f-10.f, 15.f ), 1e5f, mat ) );
+
+	mat.albedo = vec3( 0.75f, 0.25f, 0.25f );
+	mat.emission = vec3( 0.f, 0.f, 0.f );
+	scene.push_back( new Sphere( vec3( 0.f, 1e5f+5.f, 15.f ), 1e5f, mat ) );
+
+	mat.albedo = vec3( 0.25f, 0.25f, 0.75f );
+	mat.emission = vec3( 0.f, 0.f, 0.f );
+	scene.push_back( new Sphere( vec3( 0.f, 0.f, 1e5f + 20.f ), 1e5f, mat ) );
+
+	mat.albedo = vec3( 0.25f, 0.75f, 0.25f );
+	mat.emission = vec3( 0.f, 0.f, 0.f );
+	scene.push_back( new Sphere( vec3( -3.f, 0.f, 12.f ), 2.f, mat ) );
+
+	mat.albedo = vec3( 0.1f, 0.3f, 0.6f );
+	mat.emission = vec3( 0.f, 0.f, 0.f );
+	scene.push_back( new Sphere( vec3( 4.f, -2.5f, 12.f ), 2.f, mat ) );
+
 	renderer = new Renderer( scene );
 	noPrim = scene.size();
-	noLight = 3; // lights.size();
+	noLight = 1; // lights.size();
 	renderer->setCamera( cam );
 	// renderer->setLights( lights );
 }

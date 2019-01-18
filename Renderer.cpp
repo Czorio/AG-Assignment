@@ -2,15 +2,6 @@
 
 Renderer::Renderer( vector<Primitive *> primitives ) : bvh( BVH( primitives ) )
 {
-	currentSample = 1;
-
-	prebuffer = new vec3[SCRWIDTH * SCRHEIGHT];
-
-	for ( unsigned i = 0; i < SCRWIDTH * SCRHEIGHT; i++ )
-	{
-		prebuffer[i] = vec3( 0.f, 0.f, 0.f );
-	}
-
 	buffer = new Pixel[SCRWIDTH * SCRHEIGHT];
 
 	for ( unsigned y = 0; y < SCRHEIGHT; y += TILESIZE )
@@ -32,51 +23,30 @@ Renderer::~Renderer()
 		delete primitives[i];
 	}
 
-	delete[] prebuffer;
-	prebuffer = nullptr;
-
 	delete[] buffer;
 	buffer = nullptr;
 }
 
 void Renderer::renderFrame()
 {
-	if ( currentSample < SAMPLES )
-	{
 #pragma omp parallel for
-		for ( int i = 0; i < tiles.size(); i++ )
-		{
-			int x = get<0>( tiles[i] );
-			int y = get<1>( tiles[i] );
+	for ( int i = 0; i < tiles.size(); i++ )
+	{
+		int x = get<0>( tiles[i] );
+		int y = get<1>( tiles[i] );
 
-			for ( unsigned dy = 0; dy < TILESIZE; dy++ )
+		for ( unsigned dy = 0; dy < TILESIZE; dy++ )
+		{
+			for ( unsigned dx = 0; dx < TILESIZE; dx++ )
 			{
-				for ( unsigned dx = 0; dx < TILESIZE; dx++ )
+				if ( ( x + dx ) < SCRWIDTH && ( y + dy ) < SCRHEIGHT )
 				{
-					if ( ( x + dx ) < SCRWIDTH && ( y + dy ) < SCRHEIGHT )
-					{
-						prebuffer[( y + dy ) * SCRWIDTH + ( x + dx )] += shootRay( x + dx, y + dy, MAXRAYDEPTH );
-					}
+					vec3 color = shootRay( x + dx, y + dy, MAXRAYDEPTH );
+					buffer[( y + dy ) * SCRWIDTH + ( x + dx )] = rgb( color );
 				}
 			}
 		}
-		currentSample++;
 	}
-	else
-	{
-		// Prevent stupidly high framerate
-		Sleep( ( 1.f / MAX_IDLE_FPS ) * 1000 );
-	}
-}
-
-void Renderer::invalidatePrebuffer()
-{
-	for ( size_t i = 0; i < SCRWIDTH * SCRHEIGHT; i++ )
-	{
-		prebuffer[i] = vec3( 0.f, 0.f, 0.f );
-	}
-
-	currentSample = 1;
 }
 
 void Renderer::setCamera( Camera cam )
@@ -92,29 +62,17 @@ Camera *Renderer::getCamera()
 // As preparation for iterative rendering
 void Renderer::moveCam( vec3 vec )
 {
-	invalidatePrebuffer();
 	cam.move( vec );
 }
 
 // As preparation for iterative rendering
 void Renderer::rotateCam( vec3 vec )
 {
-	invalidatePrebuffer();
 	cam.rotate( vec );
 }
 
 Pixel *Renderer::getOutput() const
 {
-	// currentSample - 1 because it is increased in the renderFrame() function in preparation of the next frame.
-	// Unfortunately, we are getting the current frame, so we get currentSample - 1.
-	float importance = 1.f / float( currentSample - 1 );
-	for ( unsigned i = 0; i < SCRWIDTH * SCRHEIGHT; i++ )
-	{
-		// buffer[i] = rgb( prebuffer[i] * importance );
-		buffer[i] = rgb( prebuffer[i] );
-
-	}
-
 	return buffer;
 }
 
@@ -194,80 +152,84 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 {
 	vec3 directDiffuse = vec3(0.f, 0.f, 0.f);
 
-	Hit closestHit;
-	closestHit.t = FLT_MAX;
-	// Find nearest hit
-	for ( Primitive *p : primitives )
+	for (int i = 0; i < SAMPLES; ++i)
 	{
-		Hit tmp = p->hit( r );
-		if ( tmp.hitType != 0 )
+		Hit closestHit;
+		closestHit.t = FLT_MAX;
+		// Find nearest hit
+		for ( Primitive *p : primitives )
 		{
-			if ( tmp.t < closestHit.t )
+			Hit tmp = p->hit( r );
+			if ( tmp.hitType != 0 )
 			{
-				closestHit = tmp;
+				if ( tmp.t < closestHit.t )
+				{
+					closestHit = tmp;
+				}
 			}
 		}
-	}
 
-	// No hit
-	if ( closestHit.t == FLT_MAX )
-	{
-		return vec3( 0.f, 0.f, 0.f );
-	}
-
-	// Closest hit is light source
-	if ( closestHit.mat.type == EMIT_MAT ) return closestHit.mat.albedo;
-
-	// Create the local coordinate system of the hit point
-	vec3 Nt, Nb;
-	createLocalCoordinateSystem( closestHit.normal, Nt, Nb );
-
-	// Sample the random point on unit hemisphere
-	vec3 pointOnHemi = getPointOnHemi();
-
-	// Transform point vector to the local coordinate system of the hit point
-	// https://www.scratchapixel.com/lessons/3d-basic-rendering/global-illumination-path-tracing/global-illumination-path-tracing-practical-implementation
-	vec3 newdir(
-		pointOnHemi.x * Nb.x + pointOnHemi.y * closestHit.normal.x + pointOnHemi.z * Nt.x,
-		pointOnHemi.x * Nb.y + pointOnHemi.y * closestHit.normal.y + pointOnHemi.z * Nt.y,
-		pointOnHemi.x * Nb.z + pointOnHemi.y * closestHit.normal.z + pointOnHemi.z * Nt.z );
-
-	// Diffused ray with the calculated random direction and origin same as the hit point
-	Ray diffray;
-	diffray.direction = normalize(newdir);
-	diffray.origin = closestHit.coordinates;
-
-	// Cast the random ray and find new intersection
-	Hit newHit;
-	newHit.t = FLT_MAX;
-	
-	for ( Primitive *p : primitives )
-	{
-		Hit tmp = p->hit( diffray );
-		if ( tmp.hitType != 0 )
+		// No hit
+		if ( closestHit.t == FLT_MAX )
 		{
-			if ( tmp.t < newHit.t )
+			return vec3( 0.f, 0.f, 0.f );
+		}
+
+		// Closest hit is light source
+		if ( closestHit.mat.type == EMIT_MAT ) return closestHit.mat.albedo;
+
+		// Create the local coordinate system of the hit point
+		vec3 Nt, Nb;
+		createLocalCoordinateSystem( closestHit.normal, Nt, Nb );
+
+		// Sample the random point on unit hemisphere
+		vec3 pointOnHemi = getPointOnHemi();
+
+		// Transform point vector to the local coordinate system of the hit point
+		// https://www.scratchapixel.com/lessons/3d-basic-rendering/global-illumination-path-tracing/global-illumination-path-tracing-practical-implementation
+		vec3 newdir(
+			pointOnHemi.x * Nb.x + pointOnHemi.y * closestHit.normal.x + pointOnHemi.z * Nt.x,
+			pointOnHemi.x * Nb.y + pointOnHemi.y * closestHit.normal.y + pointOnHemi.z * Nt.y,
+			pointOnHemi.x * Nb.z + pointOnHemi.y * closestHit.normal.z + pointOnHemi.z * Nt.z );
+
+		// Diffused ray with the calculated random direction and origin same as the hit point
+		Ray diffray;
+		diffray.direction = normalize( newdir );
+		diffray.origin = closestHit.coordinates;
+
+		// Cast the random ray and find new intersection
+		Hit newHit;
+		newHit.t = FLT_MAX;
+
+		for ( Primitive *p : primitives )
+		{
+			Hit tmp = p->hit( diffray );
+			if ( tmp.hitType != 0 )
 			{
-				newHit = tmp;
+				if ( tmp.t < newHit.t )
+				{
+					newHit = tmp;
+				}
 			}
+		}
+
+		// No hit for the diffused ray
+		if ( newHit.t == FLT_MAX )
+		{
+			return vec3( 0.f, 0.f, 0.f );
+		}
+
+		// Does diffused ray hit a light source?
+		if ( newHit.mat.type == EMIT_MAT )
+		{
+			vec3 BRDF = closestHit.mat.albedo * ( 1 / PI );
+			vec3 cos_i = dot( diffray.direction, closestHit.normal );
+			directDiffuse = 2 * PI * BRDF * newHit.mat.emission * cos_i;
 		}
 	}
 	
-	// No hit for the diffused ray
-	if ( newHit.t == FLT_MAX )
-	{
-		return vec3(0.f, 0.f, 0.f);
-	}
 	
-	// Does diffused ray hit a light source?
-	if ( newHit.mat.type == EMIT_MAT )
-	{
-		vec3 BRDF = closestHit.mat.albedo * (1 / PI);
-		vec3 cos_i = dot( diffray.direction, closestHit.normal );
-		directDiffuse = 2 * PI * BRDF * newHit.mat.emission * cos_i;
-	}
-	
-	return directDiffuse;
+	return directDiffuse * 2 * (PI / SAMPLES);
 }
 
 Pixel Renderer::rgb( float r, float g, float b ) const
