@@ -11,6 +11,9 @@ class Renderer
 	Camera *getCamera();
 	void moveCam( vec3 vec );
 	void rotateCam( vec3 vec );
+	void zoomCam( float deltaZoom );
+	void changeAperture( float deltaAperture );
+	void focusCam();
 
 	Pixel *getOutput() const;
 
@@ -22,7 +25,7 @@ class Renderer
 	const BVH bvh;
 	// vector<Light *> lights;
 
-	unsigned currentSample;
+	unsigned currentIteration;
 	vec3 *prebuffer;
 	Pixel *buffer;
 	bool *boolbuffer; // TEST
@@ -35,4 +38,6 @@ class Renderer
 	// rgb to Pixel
 	Pixel rgb( float r, float g, float b ) const;
 	Pixel rgb( vec3 vec ) const;
+
+	vec3 gammaCorrect( vec3 vec ) const;
 };

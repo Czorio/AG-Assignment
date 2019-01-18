@@ -9,7 +9,7 @@ int noLight;
 // -----------------------------------------------------------
 void Game::Init()
 {
-	Camera cam = Camera( vec3( 0.f, 0.f, 0.f ), vec3( 0.f, 0.f, 10.f ), vec3( 0.f, -1.f, 0.f ), PI / 4, ( (float)SCRWIDTH / (float)SCRHEIGHT ) );
+	Camera cam = Camera( vec3( 0.f, 0.f, -2.f ), vec3( 0.f, 0.f, 0.f ), vec3( 0.f, 1.f, 0.f ), PI / 4, ( (float)SCRWIDTH / (float)SCRHEIGHT ), 0.f, 0.5f, 1.f );
 
 	Material mat;
 	mat.type = MaterialType::LAMBERTIAN_MAT;
@@ -17,19 +17,7 @@ void Game::Init()
 	mat.emission = vec3( 0.f, 0.f, 0.f );
 
 	vector<Primitive *> scene;
-	//scene.push_back( new Sphere( vec3( 0.f, 10.f, 10.f ) , 5.f, mat ));
-	//scene.push_back( new Sphere( vec3( 0.f, -10.f, 10.f ) , 5.f, mat ));
-	//vector<Primitive *> scene = loadOBJ( "assets/Robot.obj", mat );;
-	//vector<Light *> lights = vector<Light *>();
 
-	// Area light
-	//mat.albedo = vec3( 1.f, 1.f, 1.f );
-	//mat.emission = vec3( 1.5f, 1.5f, 1.5f );
-	//mat.type = MaterialType::EMIT_MAT;
-	//scene.push_back( new Sphere(vec3(-3.f, 0.f, 10.f), 1.f, mat ));
-	//scene.push_back( new Sphere(vec3(0.f, 0.f, 10.f), 1.f, mat ));
-	//scene.push_back( new Sphere(vec3(3.f, 0.f, 10.f), 1.f, mat ));
-	
 	// Light
 	mat.albedo = vec3( 1.f, 1.f, 1.f );
 	mat.emission = vec3( 10.f, 10.f, 10.f );
@@ -40,11 +28,11 @@ void Game::Init()
 	mat.type = MaterialType::LAMBERTIAN_MAT;
 	mat.albedo = vec3( 0.25f, 0.25f, 0.25f );
 	mat.emission = vec3( 0.f, 0.f, 0.f );
-	scene.push_back( new Sphere( vec3( 0.f, 1e5f-10.f, 15.f ), 1e5f, mat ) );
+	scene.push_back( new Sphere( vec3( 0.f, 1e5f - 10.f, 15.f ), 1e5f, mat ) );
 
 	mat.albedo = vec3( 0.75f, 0.25f, 0.25f );
 	mat.emission = vec3( 0.f, 0.f, 0.f );
-	scene.push_back( new Sphere( vec3( 0.f, 1e5f+5.f, 15.f ), 1e5f, mat ) );
+	scene.push_back( new Sphere( vec3( 0.f, 1e5f + 5.f, 15.f ), 1e5f, mat ) );
 
 	mat.albedo = vec3( 0.25f, 0.25f, 0.75f );
 	mat.emission = vec3( 0.f, 0.f, 0.f );
@@ -89,6 +77,12 @@ bool rotDown = false;
 bool rotCW = false;
 bool rotCCW = false;
 
+bool focusCam = false;
+bool zoomIn = false;
+bool zoomOut = false;
+bool apertureUp = false;
+bool apertureDown = false;
+
 // -----------------------------------------------------------
 // Main application tick function
 // -----------------------------------------------------------
@@ -107,12 +101,12 @@ void Game::Tick( float deltaTime )
 
 	if ( moveUp )
 	{
-		renderer->moveCam( vec3( 0.f, 0.05f, 0.f ) );
+		renderer->moveCam( vec3( 0.f, -0.05f, 0.f ) );
 	}
 
 	if ( moveDown )
 	{
-		renderer->moveCam( vec3( 0.f, -0.05f, 0.f ) );
+		renderer->moveCam( vec3( 0.f, 0.05f, 0.f ) );
 	}
 
 	if ( moveForward )
@@ -147,12 +141,37 @@ void Game::Tick( float deltaTime )
 
 	if ( rotCW )
 	{
-		renderer->rotateCam( vec3( 0.f, 0.f, 0.05f ) );
+		renderer->rotateCam( vec3( 0.f, 0.f, -0.05f ) );
 	}
 
 	if ( rotCCW )
 	{
-		renderer->rotateCam( vec3( 0.f, 0.f, -0.05f ) );
+		renderer->rotateCam( vec3( 0.f, 0.f, 0.05f ) );
+	}
+
+	if ( focusCam )
+	{
+		renderer->focusCam();
+	}
+
+	if ( zoomIn )
+	{
+		renderer->zoomCam( 0.05f );
+	}
+
+	if ( zoomOut )
+	{
+		renderer->zoomCam( -0.05f );
+	}
+
+	if ( apertureUp )
+	{
+		renderer->changeAperture( 0.05f );
+	}
+
+	if ( apertureDown )
+	{
+		renderer->changeAperture( -0.05f );
 	}
 
 	// clear the graphics window
@@ -166,13 +185,14 @@ void Game::Tick( float deltaTime )
 
 	// Display
 	screen->SetBuffer( renderer->getOutput() );
-	screen->Print( ( "FPS: " + to_string( fps ) + " " + to_string( noPrim ) + " Primitives, " + to_string( noLight ) + " Lights" ).c_str(), 2, 2, 0xFFFFFF );
 	if ( !showHelp )
 	{
-		screen->Print( "Press \"h\" for controls", 2, 8, 0xFFFFFF );
+		screen->Print( ( "FPS: " + to_string( fps ) ).c_str(), 2, 2, 0xFFFFFF );
+		screen->Print( "Press \"h\" for controls", 2, 10, 0xFFFFFF );
 	}
 	else
 	{
+		screen->Print( ( "FPS: " + to_string( fps ) + " " + to_string( noPrim ) + " Primitives, " + to_string( noLight ) + " Lights" ).c_str(), 2, 2, 0xFFFFFF );
 		screen->Print( "W - Move forward\n", 2, 10, 0xFFFFFF );
 		screen->Print( "S - Move back\n", 2, 18, 0xFFFFFF );
 		screen->Print( "A - Move left\n", 2, 26, 0xFFFFFF );
@@ -182,6 +202,15 @@ void Game::Tick( float deltaTime )
 		screen->Print( "Space - Move up\n", 2, 58, 0xFFFFFF );
 		screen->Print( "Left Ctrl - Move down\n", 2, 66, 0xFFFFFF );
 		screen->Print( "Move mouse or use the arrow keys to rotate camera\n", 2, 74, 0xFFFFFF );
+		screen->Print( "F - Focus on center\n", 2, 82, 0xFFFFFF );
+		screen->Print( "T - Zoom in\n", 2, 90, 0xFFFFFF );
+		screen->Print( "G - Zoom out\n", 2, 98, 0xFFFFFF );
+		screen->Print( "Z - Aperture increase\n", 2, 106, 0xFFFFFF );
+		screen->Print( "X - Aperture decrease\n", 2, 114, 0xFFFFFF );
+		screen->Print( "X", SCRWIDTH / 2, SCRHEIGHT / 2, 0xFFFFFF );
+		screen->Print( ( "Aperture: " + to_string( renderer->getCamera()->aperture ) ).c_str(), 2, SCRHEIGHT - 24, 0xFFFFFF );
+		screen->Print( ( "Focal Length: " + to_string( renderer->getCamera()->focalLength ) ).c_str(), 2, SCRHEIGHT - 16, 0xFFFFFF );
+		screen->Print( ( "Focus Distance: " + to_string( renderer->getCamera()->focusDistance ) ).c_str(), 2, SCRHEIGHT - 8, 0xFFFFFF );
 	}
 }
 
@@ -189,7 +218,7 @@ constexpr float rot_speed = 0.005f;
 
 void Tmpl8::Game::MouseMove( int x, int y )
 {
-	renderer->getCamera()->rotate( vec3( -x * rot_speed, y * rot_speed, 0.f ) );
+	renderer->rotateCam( vec3( -x * rot_speed, y * rot_speed, 0.f ) );
 }
 
 void Tmpl8::Game::KeyUp( int key )
@@ -231,6 +260,21 @@ void Tmpl8::Game::KeyUp( int key )
 		break;
 	case SDL_SCANCODE_E:
 		rotCW = false;
+		break;
+	case SDL_SCANCODE_F:
+		focusCam = false;
+		break;
+	case SDL_SCANCODE_T:
+		zoomIn = false;
+		break;
+	case SDL_SCANCODE_G:
+		zoomOut = false;
+		break;
+	case SDL_SCANCODE_Z:
+		apertureUp = false;
+		break;
+	case SDL_SCANCODE_X:
+		apertureDown = false;
 		break;
 	default:
 		break;
@@ -279,6 +323,21 @@ void Tmpl8::Game::KeyDown( int key )
 		break;
 	case SDL_SCANCODE_E:
 		rotCW = true;
+		break;
+	case SDL_SCANCODE_F:
+		focusCam = true;
+		break;
+	case SDL_SCANCODE_T:
+		zoomIn = true;
+		break;
+	case SDL_SCANCODE_G:
+		zoomOut = true;
+		break;
+	case SDL_SCANCODE_Z:
+		apertureUp = true;
+		break;
+	case SDL_SCANCODE_X:
+		apertureDown = true;
 		break;
 	default:
 		break;

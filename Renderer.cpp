@@ -2,6 +2,15 @@
 
 Renderer::Renderer( vector<Primitive *> primitives ) : bvh( BVH( primitives ) )
 {
+	currentIteration = 1;
+
+	prebuffer = new vec3[SCRWIDTH * SCRHEIGHT];
+
+	for ( unsigned i = 0; i < SCRWIDTH * SCRHEIGHT; i++ )
+	{
+		prebuffer[i] = vec3( 0.f, 0.f, 0.f );
+	}
+
 	buffer = new Pixel[SCRWIDTH * SCRHEIGHT];
 
 	for ( unsigned y = 0; y < SCRHEIGHT; y += TILESIZE )
@@ -29,6 +38,8 @@ Renderer::~Renderer()
 
 void Renderer::renderFrame()
 {
+	if ( currentIteration < ITERATIONS )
+	{
 #pragma omp parallel for
 	for ( int i = 0; i < tiles.size(); i++ )
 	{
@@ -46,7 +57,18 @@ void Renderer::renderFrame()
 				}
 			}
 		}
+		currentIteration++;
 	}
+}
+
+void Renderer::invalidatePrebuffer()
+{
+	for ( size_t i = 0; i < SCRWIDTH * SCRHEIGHT; i++ )
+	{
+		prebuffer[i] = vec3( 0.f, 0.f, 0.f );
+	}
+
+	currentIteration = 1;
 }
 
 void Renderer::setCamera( Camera cam )
@@ -71,8 +93,36 @@ void Renderer::rotateCam( vec3 vec )
 	cam.rotate( vec );
 }
 
+void Renderer::zoomCam( float deltaZoom )
+{
+	invalidatePrebuffer();
+	cam.zoom( deltaZoom, true );
+}
+
+void Renderer::changeAperture( float deltaAperture )
+{
+	invalidatePrebuffer();
+	cam.changeAperture( deltaAperture, true );
+}
+
+void Renderer::focusCam()
+{
+	invalidatePrebuffer();
+	Hit h = bvh.intersect( cam.focusRay() );
+
+	cam.focusDistance = h.t;
+}
+
 Pixel *Renderer::getOutput() const
 {
+	// currentSample - 1 because it is increased in the renderFrame() function in preparation of the next frame.
+	// Unfortunately, we are getting the current frame, so we get currentSample - 1.
+	float importance = 1.f / float( currentIteration - 1 );
+	for ( unsigned i = 0; i < SCRWIDTH * SCRHEIGHT; i++ )
+	{
+		buffer[i] = rgb( gammaCorrect( prebuffer[i] * importance ) );
+	}
+
 	return buffer;
 }
 
@@ -126,13 +176,13 @@ void createLocalCoordinateSystem( const vec3 &N, vec3 &Nt, vec3 &Nb )
 {
 	// This came out of my head - maybe there is better option
 	// However, two other things tested did not work (scratchapixel & gpu blog)
-	if ( abs(N.z) > EPSILON )
+	if ( abs( N.z ) > EPSILON )
 	{
 		Nt.x = 1.5 * N.x; // arbitary
 		Nt.y = 1.5 * N.y; // arbitary
 		Nt.z = -( Nt.x * N.x + Nt.y * N.y ) / N.z;
 	}
-	else if ( abs(N.y) > EPSILON )
+	else if ( abs( N.y ) > EPSILON )
 	{
 		Nt.x = 1.5 * N.x; // arbitary
 		Nt.z = 1.5 * N.z; // arbitary
@@ -145,28 +195,14 @@ void createLocalCoordinateSystem( const vec3 &N, vec3 &Nt, vec3 &Nb )
 		Nt.x = -( Nt.y * N.y + Nt.z * N.z ) / N.x;
 	}
 	Nt = normalize( Nt );
-	Nb = normalize(cross( N, Nt ));
+	Nb = normalize( cross( N, Nt ) );
 }
 
 vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 {
-	vec3 directDiffuse = vec3(0.f, 0.f, 0.f);
+	vec3 directDiffuse = vec3( 0.f, 0.f, 0.f );
 
-
-	Hit closestHit;
-	closestHit.t = FLT_MAX;
-	// Find nearest hit
-	for ( Primitive *p : primitives )
-	{
-		Hit tmp = p->hit( r );
-		if ( tmp.hitType != 0 )
-		{
-			if ( tmp.t < closestHit.t )
-			{
-				closestHit = tmp;
-			}
-		}
-	}
+	Hit closestHit = bvh.intersect( r );
 
 	// No hit
 	if ( closestHit.t == FLT_MAX )
@@ -180,6 +216,11 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 	// Create the local coordinate system of the hit point
 	vec3 Nt, Nb;
 	createLocalCoordinateSystem( closestHit.normal, Nt, Nb );
+	for ( int i = 0; i < SAMPLES; ++i )
+	{
+		// Sample the random point on unit hemisphere
+		vec3 pointOnHemi = getPointOnHemi();
+
 	for ( int i = 0; i < SAMPLES; ++i )
 	{
 		// Sample the random point on unit hemisphere
@@ -227,9 +268,8 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 			directDiffuse = BRDF * newHit.mat.emission * cos_i;
 		}
 	}
-	
-	
-	return directDiffuse * 2 * (PI / SAMPLES);
+
+	return directDiffuse * 2 * ( PI / SAMPLES );
 }
 
 Pixel Renderer::rgb( float r, float g, float b ) const
@@ -254,4 +294,20 @@ Pixel Renderer::rgb( float r, float g, float b ) const
 Pixel Renderer::rgb( vec3 vec ) const
 {
 	return rgb( vec.x, vec.y, vec.z );
+}
+
+union simdVector {
+	__m128 v;   // SSE 4 x float vector
+	float a[4]; // scalar array of 4 floats
+};
+
+vec3 Renderer::gammaCorrect( vec3 vec ) const
+{
+	__m128 val = _mm_set_ps( vec.x, vec.y, vec.z, vec.dummy );
+	__m128 corrected = _mm_sqrt_ps( val );
+
+	simdVector convert;
+	convert.v = corrected;
+	vec3 res = vec3( convert.a[3], convert.a[2], convert.a[1] );
+	return res;
 }

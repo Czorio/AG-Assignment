@@ -13,9 +13,13 @@ class Camera
 	float width;
 	float height;
 
+	float aperture;
+	float focalLength;
+	float focusDistance;
+
 	Camera() : origin( vec3() ), forward( vec3() ), up( vec3() ), right( vec3() ) {}
 
-	Camera( vec3 origin, vec3 target, vec3 upGuide, float fov, float aspect ) : origin( origin )
+	Camera( vec3 origin, vec3 target, vec3 upGuide, float fov, float aspect, float aperture, float focalLength, float focusDistance ) : origin( origin ), aperture( aperture ), focalLength( focalLength ), focusDistance( focusDistance )
 	{
 		forward = ( target - origin ).normalized();
 		right = forward.cross( upGuide ).normalized();
@@ -28,12 +32,67 @@ class Camera
 	Ray getRay( unsigned x, unsigned y ) const
 	{
 		Ray r;
+
+		// Randomize origin for DoF
+		vec3 randVec = rotateVec( up, forward, Rand( 2 * PI ) );
+		r.origin = origin + randVec * Rand( aperture );
+
+		// Add some AA
+		float norm_x = ( ( float( x ) + ( -1.f + Rand( 1.f ) ) ) / float( SCRWIDTH ) ) - 0.5f;
+		float norm_y = ( ( float( y ) + ( -1.f + Rand( 1.f ) ) ) / float( SCRHEIGHT ) ) - 0.5f;
+
+		vec3 imagePoint = norm_x * right * ( focusDistance * 0.5f ) * ( 1 / focalLength ) + norm_y * up * ( focusDistance * 0.5f ) * ( 1 / focalLength ) + origin + forward * focusDistance;
+
+		r.direction = imagePoint - r.origin;
+
+		return r;
+	}
+
+	// Relative zoom is true when you simply want to zoom in or out
+	// Relative zoom is false when you want to jump to a specific value
+	void zoom( float value, bool relativeZoom )
+	{
+		if ( relativeZoom )
+		{
+			if ( focalLength + value > 0.f )
+			{
+				focalLength += value;
+			}
+			else
+			{
+				focalLength = 0.01f;
+			}
+		}
+		else
+		{
+			focalLength = value;
+		}
+	}
+
+	void changeAperture( float value, bool relativeChange )
+	{
+		if ( relativeChange )
+		{
+			if ( aperture + value > 0.f )
+			{
+				aperture += value;
+			}
+			else
+			{
+				aperture = 0.f;
+			}
+		}
+		else
+		{
+			aperture = value;
+		}
+	}
+
+	Ray focusRay()
+	{
+		Ray r;
 		r.origin = origin;
-
-		float norm_x = ( 2.0f * x ) / SCRWIDTH - 1.0f;
-		float norm_y = ( -2.0f * y ) / SCRHEIGHT + 1.0f;
-
-		r.direction = ( forward + norm_x * width * right + norm_y * height * up ).normalized();
+		r.direction = forward;
 
 		return r;
 	}
@@ -45,7 +104,7 @@ class Camera
 	}
 
 	// Stack overflow: https://stackoverflow.com/questions/42421611/3d-vector-rotation-in-c
-	vec3 rotateVec( const vec3 &v, const vec3 &axis, float angle )
+	vec3 rotateVec( const vec3 &v, const vec3 &axis, float angle ) const
 	{
 		float cos_angle = cos( angle );
 		float sin_angle = sin( angle );
