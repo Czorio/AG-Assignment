@@ -103,6 +103,26 @@ void Renderer::rotateCam( vec3 vec )
 	cam.rotate( vec );
 }
 
+void Renderer::zoomCam( float deltaZoom )
+{
+	invalidatePrebuffer();
+	cam.zoom( deltaZoom, true );
+}
+
+void Renderer::changeAperture( float deltaAperture )
+{
+	invalidatePrebuffer();
+	cam.changeAperture( deltaAperture, true );
+}
+
+void Renderer::focusCam()
+{
+	invalidatePrebuffer();
+	Hit h = bvh.intersect( cam.focusRay() );
+
+	cam.focusDistance = h.t;
+}
+
 Pixel *Renderer::getOutput() const
 {
 	// currentSample - 1 because it is increased in the renderFrame() function in preparation of the next frame.
@@ -110,9 +130,7 @@ Pixel *Renderer::getOutput() const
 	float importance = 1.f / float( currentSample - 1 );
 	for ( unsigned i = 0; i < SCRWIDTH * SCRHEIGHT; i++ )
 	{
-		// buffer[i] = rgb( prebuffer[i] * importance );
-		buffer[i] = rgb( prebuffer[i] );
-
+		buffer[i] = rgb( gammaCorrect( prebuffer[i] * importance ) );
 	}
 
 	return buffer;
@@ -292,4 +310,20 @@ Pixel Renderer::rgb( float r, float g, float b ) const
 Pixel Renderer::rgb( vec3 vec ) const
 {
 	return rgb( vec.x, vec.y, vec.z );
+}
+
+union simdVector {
+	__m128 v;   // SSE 4 x float vector
+	float a[4]; // scalar array of 4 floats
+};
+
+vec3 Renderer::gammaCorrect( vec3 vec ) const
+{
+	__m128 val = _mm_set_ps( vec.x, vec.y, vec.z, vec.dummy );
+	__m128 corrected = _mm_sqrt_ps( val );
+
+	simdVector convert;
+	convert.v = corrected;
+	vec3 res = vec3( convert.a[3], convert.a[2], convert.a[1] );
+	return res;
 }
