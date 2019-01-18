@@ -152,36 +152,36 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 {
 	vec3 directDiffuse = vec3(0.f, 0.f, 0.f);
 
-	for (int i = 0; i < SAMPLES; ++i)
+
+	Hit closestHit;
+	closestHit.t = FLT_MAX;
+	// Find nearest hit
+	for ( Primitive *p : primitives )
 	{
-		Hit closestHit;
-		closestHit.t = FLT_MAX;
-		// Find nearest hit
-		for ( Primitive *p : primitives )
+		Hit tmp = p->hit( r );
+		if ( tmp.hitType != 0 )
 		{
-			Hit tmp = p->hit( r );
-			if ( tmp.hitType != 0 )
+			if ( tmp.t < closestHit.t )
 			{
-				if ( tmp.t < closestHit.t )
-				{
-					closestHit = tmp;
-				}
+				closestHit = tmp;
 			}
 		}
+	}
 
-		// No hit
-		if ( closestHit.t == FLT_MAX )
-		{
-			return vec3( 0.f, 0.f, 0.f );
-		}
+	// No hit
+	if ( closestHit.t == FLT_MAX )
+	{
+		return vec3( 0.f, 0.f, 0.f );
+	}
 
-		// Closest hit is light source
-		if ( closestHit.mat.type == EMIT_MAT ) return closestHit.mat.albedo;
+	// Closest hit is light source
+	if ( closestHit.mat.type == EMIT_MAT ) return closestHit.mat.albedo;
 
-		// Create the local coordinate system of the hit point
-		vec3 Nt, Nb;
-		createLocalCoordinateSystem( closestHit.normal, Nt, Nb );
-
+	// Create the local coordinate system of the hit point
+	vec3 Nt, Nb;
+	createLocalCoordinateSystem( closestHit.normal, Nt, Nb );
+	for ( int i = 0; i < SAMPLES; ++i )
+	{
 		// Sample the random point on unit hemisphere
 		vec3 pointOnHemi = getPointOnHemi();
 
