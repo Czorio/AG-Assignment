@@ -7,8 +7,8 @@ struct Primitive
 
 	Primitive()
 	{
-		mat.color = vec3();
-		mat.spec = 0.f;
+		mat.albedo = vec3();
+		mat.emission = vec3();
 	}
 
 	Primitive( vec3 origin, Material mat ) : origin( origin ), mat( mat ) {}

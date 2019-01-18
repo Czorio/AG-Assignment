@@ -9,18 +9,15 @@ struct Texture
 
 enum MaterialType
 {
-	DIFFUSE_MAT,
-	MIRROR_MAT,
-	GLASS_MAT
+	LAMBERTIAN_MAT,
+	EMIT_MAT // for lights
 };
 
 struct Material
 {
 	MaterialType type;
-	vec3 color;
-	float spec;
-	float refractionIndex;
-	float attenuation;
+	vec3 albedo;
+	vec3 emission;
 
 	void loadDiffuse( char *filename )
 	{
@@ -39,21 +36,21 @@ struct Material
 		for ( unsigned i = 0; i < diffuse->height * diffuse->width; i++ )
 		{
 			Color converter;
-			vec3 color = vec3();
+			vec3 albedo = vec3();
 
 			converter.pixel = buffer[i];
 
-			color.x = (float)converter.c.r / 255.f;
-			color.y = (float)converter.c.g / 255.f;
-			color.z = (float)converter.c.b / 255.f;
+			albedo.x = (float)converter.c.r / 255.f;
+			albedo.y = (float)converter.c.g / 255.f;
+			albedo.z = (float)converter.c.b / 255.f;
 
-			diffuse->values[i] = color;
+			diffuse->values[i] = albedo;
 		}
 
 		hasDiffuseTexture = true;
 	}
 
-	// Use this to get the color at the hit coordinates
+	// Use this to get the albedo at the hit coordinates
 	vec3 getDiffuse( float u, float v )
 	{
 		if ( hasDiffuseTexture )
@@ -64,7 +61,7 @@ struct Material
 		}
 		else
 		{
-			return color;
+			return albedo;
 		}
 	}
 
