@@ -41,23 +41,28 @@ void Renderer::renderFrame()
 	if ( currentIteration < ITERATIONS )
 	{
 #pragma omp parallel for
-	for ( int i = 0; i < tiles.size(); i++ )
-	{
-		int x = get<0>( tiles[i] );
-		int y = get<1>( tiles[i] );
-
-		for ( unsigned dy = 0; dy < TILESIZE; dy++ )
+		for ( int i = 0; i < tiles.size(); i++ )
 		{
-			for ( unsigned dx = 0; dx < TILESIZE; dx++ )
+			int x = get<0>( tiles[i] );
+			int y = get<1>( tiles[i] );
+
+			for ( unsigned dy = 0; dy < TILESIZE; dy++ )
 			{
-				if ( ( x + dx ) < SCRWIDTH && ( y + dy ) < SCRHEIGHT )
+				for ( unsigned dx = 0; dx < TILESIZE; dx++ )
 				{
-					vec3 color = shootRay( x + dx, y + dy, MAXRAYDEPTH );
-					buffer[( y + dy ) * SCRWIDTH + ( x + dx )] = rgb( color );
+					if ( ( x + dx ) < SCRWIDTH && ( y + dy ) < SCRHEIGHT )
+					{
+						prebuffer[( y + dy ) * SCRWIDTH + ( x + dx )] += shootRay( x + dx, y + dy, MAXRAYDEPTH );
+					}
 				}
 			}
 		}
 		currentIteration++;
+	}
+	else
+	{
+		// Prevent stupidly high framerate
+		Sleep( ( 1.f / MAX_IDLE_FPS ) * 1000 );
 	}
 }
 
@@ -216,10 +221,6 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 	// Create the local coordinate system of the hit point
 	vec3 Nt, Nb;
 	createLocalCoordinateSystem( closestHit.normal, Nt, Nb );
-	for ( int i = 0; i < SAMPLES; ++i )
-	{
-		// Sample the random point on unit hemisphere
-		vec3 pointOnHemi = getPointOnHemi();
 
 	for ( int i = 0; i < SAMPLES; ++i )
 	{
@@ -272,42 +273,42 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 	return directDiffuse * 2 * ( PI / SAMPLES );
 }
 
-Pixel Renderer::rgb( float r, float g, float b ) const
-{
-	clampFloat( r, 0.f, 1.f );
-	clampFloat( g, 0.f, 1.f );
-	clampFloat( b, 0.f, 1.f );
+	Pixel Renderer::rgb( float r, float g, float b ) const
+	{
+		clampFloat( r, 0.f, 1.f );
+		clampFloat( g, 0.f, 1.f );
+		clampFloat( b, 0.f, 1.f );
 
-	unsigned char cr = r * 255;
-	unsigned char cg = g * 255;
-	unsigned char cb = b * 255;
+		unsigned char cr = r * 255;
+		unsigned char cg = g * 255;
+		unsigned char cb = b * 255;
 
-	Color c;
-	c.c.a = 255; // alpha
-	c.c.r = cr;  // red
-	c.c.g = cg;  // green
-	c.c.b = cb;  // blue
+		Color c;
+		c.c.a = 255; // alpha
+		c.c.r = cr;  // red
+		c.c.g = cg;  // green
+		c.c.b = cb;  // blue
 
-	return c.pixel;
-}
+		return c.pixel;
+	}
 
-Pixel Renderer::rgb( vec3 vec ) const
-{
-	return rgb( vec.x, vec.y, vec.z );
-}
+	Pixel Renderer::rgb( vec3 vec ) const
+	{
+		return rgb( vec.x, vec.y, vec.z );
+	}
 
-union simdVector {
-	__m128 v;   // SSE 4 x float vector
-	float a[4]; // scalar array of 4 floats
-};
+	union simdVector {
+		__m128 v;   // SSE 4 x float vector
+		float a[4]; // scalar array of 4 floats
+	};
 
-vec3 Renderer::gammaCorrect( vec3 vec ) const
-{
-	__m128 val = _mm_set_ps( vec.x, vec.y, vec.z, vec.dummy );
-	__m128 corrected = _mm_sqrt_ps( val );
+	vec3 Renderer::gammaCorrect( vec3 vec ) const
+	{
+		__m128 val = _mm_set_ps( vec.x, vec.y, vec.z, vec.dummy );
+		__m128 corrected = _mm_sqrt_ps( val );
 
-	simdVector convert;
-	convert.v = corrected;
-	vec3 res = vec3( convert.a[3], convert.a[2], convert.a[1] );
-	return res;
-}
+		simdVector convert;
+		convert.v = corrected;
+		vec3 res = vec3( convert.a[3], convert.a[2], convert.a[1] );
+		return res;
+	}
