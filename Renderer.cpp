@@ -208,74 +208,51 @@ void createLocalCoordinateSystem( const vec3 &N, vec3 &Nt, vec3 &Nb )
 	Nb = normalize( cross( N, Nt ) );
 }
 
+vec3 calculateDiffuseRayDir( const vec3 &N, const vec3 &Nt, const vec3 &Nb )
+{
+	// Sample the random point on unit hemisphere
+	vec3 pointOnHemi = getPointOnHemi();
+
+	// Transform point vector to the local coordinate system of the hit point
+	// https://www.scratchapixel.com/lessons/3d-basic-rendering/global-illumination-path-tracing/global-illumination-path-tracing-practical-implementation
+	vec3 newdir(
+		pointOnHemi.x * Nb.x + pointOnHemi.y * N.x + pointOnHemi.z * Nt.x,
+		pointOnHemi.x * Nb.y + pointOnHemi.y * N.y + pointOnHemi.z * Nt.y,
+		pointOnHemi.x * Nb.z + pointOnHemi.y * N.z + pointOnHemi.z * Nt.z );
+
+	// Diffused ray with the calculated random direction and origin same as the hit point
+	return normalize( newdir );
+}
+
 vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 {
-	vec3 directDiffuse = vec3( 0.f, 0.f, 0.f );
+	if ( depth > MAXRAYDEPTH ) return vec3( 0.f, 0.f, 0.f );
 
 	Hit closestHit = bvh.intersect( r );
 
 	// No hit
-	if ( closestHit.t == FLT_MAX )
+	if ( closestHit.t == FLT_MAX  )
 	{
 		return vec3( 0.f, 0.f, 0.f );
 	}
 
 	// Closest hit is light source
-	if ( closestHit.mat.type == EMIT_MAT ) return closestHit.mat.albedo;
+	if ( closestHit.mat.type == EMIT_MAT ) return closestHit.mat.emission;
 
 	// Create the local coordinate system of the hit point
 	vec3 Nt, Nb;
 	createLocalCoordinateSystem( closestHit.normal, Nt, Nb );
 
-	for ( int i = 0; i < SAMPLES; ++i )
-	{
-		// Sample the random point on unit hemisphere
-		vec3 pointOnHemi = getPointOnHemi();
+	// Calculate random diffused ray
+	Ray diffray;
+	diffray.direction = calculateDiffuseRayDir( closestHit.normal, Nt, Nb );
+	diffray.origin = closestHit.coordinates + REFLECTIONBIAS * diffray.direction;
 
-		// Transform point vector to the local coordinate system of the hit point
-		// https://www.scratchapixel.com/lessons/3d-basic-rendering/global-illumination-path-tracing/global-illumination-path-tracing-practical-implementation
-		vec3 newdir(
-			pointOnHemi.x * Nb.x + pointOnHemi.y * closestHit.normal.x + pointOnHemi.z * Nt.x,
-			pointOnHemi.x * Nb.y + pointOnHemi.y * closestHit.normal.y + pointOnHemi.z * Nt.y,
-			pointOnHemi.x * Nb.z + pointOnHemi.y * closestHit.normal.z + pointOnHemi.z * Nt.z );
+	vec3 BRDF = closestHit.mat.albedo * ( 1 / PI );
+	vec3 Ei = shootRay( diffray, depth - 1 ) * dot( closestHit.normal, diffray.direction );
 
-		// Diffused ray with the calculated random direction and origin same as the hit point
-		Ray diffray;
-		diffray.direction = normalize( newdir );
-		diffray.origin = closestHit.coordinates;
 
-		// Cast the random ray and find new intersection
-		Hit newHit;
-		newHit.t = FLT_MAX;
-
-		for ( Primitive *p : primitives )
-		{
-			Hit tmp = p->hit( diffray );
-			if ( tmp.hitType != 0 )
-			{
-				if ( tmp.t < newHit.t )
-				{
-					newHit = tmp;
-				}
-			}
-		}
-
-		// No hit for the diffused ray
-		if ( newHit.t == FLT_MAX )
-		{
-			return vec3( 0.f, 0.f, 0.f );
-		}
-
-		// Does diffused ray hit a light source?
-		if ( newHit.mat.type == EMIT_MAT )
-		{
-			vec3 BRDF = closestHit.mat.albedo * ( 1 / PI );
-			vec3 cos_i = dot( diffray.direction, closestHit.normal );
-			directDiffuse = BRDF * newHit.mat.emission * cos_i;
-		}
-	}
-
-	return directDiffuse * 2 * ( PI / SAMPLES );
+	return PI * 2.0f * BRDF * Ei;
 }
 
 Pixel Renderer::rgb( float r, float g, float b ) const
