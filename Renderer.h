@@ -6,8 +6,6 @@ class Renderer
 	~Renderer();
 
 	void renderFrame();
-
-	void setLights( vector<Light *> lights );
 	void setCamera( Camera cam );
 
 	Camera *getCamera();
@@ -25,15 +23,15 @@ class Renderer
 	Camera cam;
 	vector<Primitive *> primitives;
 	const BVH bvh;
-	vector<Light *> lights;
+	// vector<Light *> lights;
 
-	unsigned currentSample;
+	unsigned currentIteration;
 	vec3 *prebuffer;
 	Pixel *buffer;
+	bool *boolbuffer; // TEST
 
 	vec3 shootRay( unsigned x, unsigned y, unsigned depth ) const;
 	vec3 shootRay( const Ray &r, unsigned depth ) const;
-	vec3 shadowRay( const Hit &h, const Light *l ) const;
 
 	void invalidatePrebuffer();
 

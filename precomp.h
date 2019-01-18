@@ -20,8 +20,9 @@
 #define BVHDEPTH 128
 #define BINCOUNT 16 // this can also be reduced for faster construction
 
-#define MAXRAYDEPTH 4
-#define SAMPLES 1024
+#define MAXRAYDEPTH 8
+#define SAMPLES 4
+#define ITERATIONS 1024
 
 #define SHADOWBIAS 0.001f
 #define REFLECTIONBIAS 0.001f
@@ -66,6 +67,7 @@
 #include <thread>
 #include <tuple>
 #include <vector>
+#include <random>
 
 // Namespaced C headers:
 #include <cassert>
@@ -98,6 +100,7 @@ using namespace Tmpl8;
 #include "Primitive.h"
 #include "OBJLoader.h"
 #include "BVH.h"
+#include "Sample.h"
 #include "Renderer.h"
 
 #include "game.h"

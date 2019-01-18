@@ -2,12 +2,13 @@
 
 Renderer::Renderer( vector<Primitive *> primitives ) : bvh( BVH( primitives ) )
 {
-	currentSample = 1;
+	currentIteration = 1;
 
 	prebuffer = new vec3[SCRWIDTH * SCRHEIGHT];
+
 	for ( unsigned i = 0; i < SCRWIDTH * SCRHEIGHT; i++ )
 	{
-		prebuffer[i] = vec3();
+		prebuffer[i] = vec3( 0.f, 0.f, 0.f );
 	}
 
 	buffer = new Pixel[SCRWIDTH * SCRHEIGHT];
@@ -31,11 +32,6 @@ Renderer::~Renderer()
 		delete primitives[i];
 	}
 
-	for ( unsigned i = 0; i < lights.size(); i++ )
-	{
-		delete lights[i];
-	}
-
 	delete[] prebuffer;
 	prebuffer = nullptr;
 
@@ -45,7 +41,7 @@ Renderer::~Renderer()
 
 void Renderer::renderFrame()
 {
-	if ( currentSample < SAMPLES )
+	if ( currentIteration < ITERATIONS )
 	{
 #pragma omp parallel for
 		for ( int i = 0; i < tiles.size(); i++ )
@@ -64,7 +60,7 @@ void Renderer::renderFrame()
 				}
 			}
 		}
-		currentSample++;
+		currentIteration++;
 	}
 	else
 	{
@@ -73,9 +69,14 @@ void Renderer::renderFrame()
 	}
 }
 
-void Renderer::setLights( vector<Light *> lights )
+void Renderer::invalidatePrebuffer()
 {
-	this->lights = lights;
+	for ( size_t i = 0; i < SCRWIDTH * SCRHEIGHT; i++ )
+	{
+		prebuffer[i] = vec3( 0.f, 0.f, 0.f );
+	}
+
+	currentIteration = 1;
 }
 
 void Renderer::setCamera( Camera cam )
@@ -126,7 +127,7 @@ Pixel *Renderer::getOutput() const
 {
 	// currentSample - 1 because it is increased in the renderFrame() function in preparation of the next frame.
 	// Unfortunately, we are getting the current frame, so we get currentSample - 1.
-	float importance = 1.f / float( currentSample - 1 );
+	float importance = 1.f / float( currentIteration - 1 );
 	for ( unsigned i = 0; i < SCRWIDTH * SCRHEIGHT; i++ )
 	{
 		buffer[i] = rgb( gammaCorrect( prebuffer[i] * importance ) );
@@ -153,258 +154,128 @@ __inline void clampFloat( float &val, float lo, float hi )
 	}
 }
 
-// Code adapted from Scratchapixel
-inline void calcFresnel( const vec3 &rayDir, const vec3 &normal, const float &refractiveIndex, float &kr )
+// FROM Ray-tracer:
+//Ray getReflectedRay( const vec3 &incoming, const vec3 &normal, const vec3 &hitLocation )
+//{
+//	Ray r;
+//	vec3 outgoing = incoming - 2.f * incoming.dot( normal ) * normal;
+//	r.origin = hitLocation + ( REFLECTIONBIAS * outgoing );
+//	r.direction = outgoing;
+//
+//	return r;
+//}
+
+// Random generator - needs to move somewhere else (?)
+std::random_device rd;
+std::mt19937 mt( rd() );
+std::uniform_real_distribution<float> uniform_dist( 0.f, 1.f );
+
+vec3 getPointOnHemi()
 {
-	float cosI = -1 * normal.dot( rayDir );
-	float etaI = 1;
-	float etaT = refractiveIndex;
-	if ( cosI > 0 )
+	float r1 = uniform_dist( mt );
+	float r2 = uniform_dist( mt );
+
+	Sample s;
+	// vec3 point = s.cosineSampleHemisphere( r1, r2 ); // Does not work as expected!
+	vec3 point = s.uniformSampleHemisphere( r1, r2 );
+
+	return point;
+}
+
+void createLocalCoordinateSystem( const vec3 &N, vec3 &Nt, vec3 &Nb )
+{
+	// This came out of my head - maybe there is better option
+	// However, two other things tested did not work (scratchapixel & gpu blog)
+	if ( abs( N.z ) > EPSILON )
 	{
-		swap( etaI, etaT );
+		Nt.x = 1.5 * N.x; // arbitary
+		Nt.y = 1.5 * N.y; // arbitary
+		Nt.z = -( Nt.x * N.x + Nt.y * N.y ) / N.z;
 	}
-
-	float sinT = etaI / etaT * sqrtf( max( 0.f, 1 - cosI * cosI ) );
-
-	if ( sinT >= 1 )
+	else if ( abs( N.y ) > EPSILON )
 	{
-		// Total internal reflection
-		kr = 1;
+		Nt.x = 1.5 * N.x; // arbitary
+		Nt.z = 1.5 * N.z; // arbitary
+		Nt.y = -( Nt.x * N.x + Nt.z * N.z ) / N.y;
 	}
 	else
 	{
-		float cosT = sqrtf( max( 0.f, 1 - sinT * sinT ) );
-		cosI = fabsf( cosI );
-		float Rs = ( ( etaT * cosI ) - ( etaI * cosT ) ) / ( ( etaT * cosI ) + ( etaI * cosT ) );
-		float Rp = ( ( etaI * cosI ) - ( etaT * cosT ) ) / ( ( etaI * cosI ) + ( etaT * cosT ) );
-
-		kr = ( Rs * Rs + Rp * Rp ) / 2;
+		Nt.y = 1.5 * N.y; // arbitary
+		Nt.z = 1.5 * N.z; // arbitary
+		Nt.x = -( Nt.y * N.y + Nt.z * N.z ) / N.x;
 	}
-}
-
-Ray getReflectedRay( const vec3 &incoming, const vec3 &normal, const vec3 &hitLocation )
-{
-	Ray r;
-	vec3 outgoing = incoming - 2.f * incoming.dot( normal ) * normal;
-	r.origin = hitLocation + ( REFLECTIONBIAS * outgoing );
-	r.direction = outgoing;
-
-	return r;
-}
-
-Ray getRefractedRay( const float &n1, const float &n2, const vec3 &normal, const vec3 &incoming, const vec3 &hitLocation )
-{
-	float n = n1 / n2;
-	// If we hit from inside, flip the normal
-	float cosI = -1 * normal.dot( incoming );
-	float cosT2 = 1.f - ( n * n ) * ( 1.f - ( cosI * cosI ) );
-
-	Ray r;
-	vec3 refractedDirection = ( n * incoming ) + ( n * cosI - sqrtf( cosT2 ) ) * normal;
-	refractedDirection.normalize();
-	r.origin = hitLocation + ( REFRACTIONBIAS * refractedDirection );
-	r.direction = refractedDirection;
-
-	return r;
+	Nt = normalize( Nt );
+	Nb = normalize( cross( N, Nt ) );
 }
 
 vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 {
-	Hit closestHit;
-	closestHit.t = FLT_MAX;
-#ifdef LINEAR_TRAVERSE
-	// Find nearest hit
-	for ( Primitive *p : primitives )
-	{
-		Hit tmp = p->hit( r );
-		if ( tmp.hitType != 0 )
-		{
-			if ( tmp.t < closestHit.t )
-			{
-				closestHit = tmp;
-			}
-		}
-	}
-#endif
-#ifdef USE_BVH
-	closestHit = bvh.intersect( r );
-#endif
-#ifdef BVH_DEBUG
-	return bvh.debug( r );
-#endif
+	vec3 directDiffuse = vec3( 0.f, 0.f, 0.f );
+
+	Hit closestHit = bvh.intersect( r );
 
 	// No hit
 	if ( closestHit.t == FLT_MAX )
 	{
-		return vec3();
+		return vec3( 0.f, 0.f, 0.f );
 	}
 
-	vec3 lightIntensity = vec3( AMBIENTLIGHT, AMBIENTLIGHT, AMBIENTLIGHT );
+	// Closest hit is light source
+	if ( closestHit.mat.type == EMIT_MAT ) return closestHit.mat.albedo;
 
-	// Shadows
-	for ( Light *l : lights )
+	// Create the local coordinate system of the hit point
+	vec3 Nt, Nb;
+	createLocalCoordinateSystem( closestHit.normal, Nt, Nb );
+
+	for ( int i = 0; i < SAMPLES; ++i )
 	{
-		lightIntensity += shadowRay( closestHit, l );
-	}
+		// Sample the random point on unit hemisphere
+		vec3 pointOnHemi = getPointOnHemi();
 
-	vec3 color = vec3();
+		// Transform point vector to the local coordinate system of the hit point
+		// https://www.scratchapixel.com/lessons/3d-basic-rendering/global-illumination-path-tracing/global-illumination-path-tracing-practical-implementation
+		vec3 newdir(
+			pointOnHemi.x * Nb.x + pointOnHemi.y * closestHit.normal.x + pointOnHemi.z * Nt.x,
+			pointOnHemi.x * Nb.y + pointOnHemi.y * closestHit.normal.y + pointOnHemi.z * Nt.y,
+			pointOnHemi.x * Nb.z + pointOnHemi.y * closestHit.normal.z + pointOnHemi.z * Nt.z );
 
-	// Reflection
-	if ( depth > 0 && closestHit.mat.type == MaterialType::MIRROR_MAT )
-	{
-		Ray refl = getReflectedRay( r.direction, closestHit.normal, closestHit.coordinates );
+		// Diffused ray with the calculated random direction and origin same as the hit point
+		Ray diffray;
+		diffray.direction = normalize( newdir );
+		diffray.origin = closestHit.coordinates;
 
-		vec3 specular = shootRay( refl, depth - 1 );
-		color = ( closestHit.mat.getDiffuse( closestHit.u, closestHit.v ) * lightIntensity ) * ( 1.f - closestHit.mat.spec );
-		specular *= closestHit.mat.spec;
-		color += specular;
-	}
-	// Refraction
-	else if ( depth > 0 && closestHit.mat.type == MaterialType::GLASS_MAT )
-	{
-		vec3 refracted = vec3();
-		vec3 reflected = vec3();
-		float kr = 0.f;
-		// Not sure why, but the -1.f factor for the normal seems to make the fresnel work better
-		calcFresnel( r.direction, -1.f * closestHit.normal * closestHit.hitType, closestHit.mat.refractionIndex, kr );
+		// Cast the random ray and find new intersection
+		Hit newHit;
+		newHit.t = FLT_MAX;
 
-		// Do we need to refract?
-		if ( kr < 1.f )
-		{
-			Ray refr = getRefractedRay( r.refractionIndex, closestHit.mat.refractionIndex, closestHit.normal * closestHit.hitType, r.direction, closestHit.coordinates );
-
-			vec3 attenuation = vec3( 1.f, 1.f, 1.f );
-			if ( closestHit.hitType == -1 )
-			{
-				// If we hit from inside the object, add in Attenuation and set the refraction index on the Ray
-				refr.refractionIndex = closestHit.mat.refractionIndex;
-
-				// Calculate attenuation of the light through Beer's Law
-				vec3 absorbance = ( vec3( 1.f, 1.f, 1.f ) - closestHit.mat.color ) * closestHit.mat.attenuation * -1.f * closestHit.t;
-				attenuation = vec3( expf( absorbance.x ), expf( absorbance.y ), expf( absorbance.z ) );
-			}
-
-			refracted = shootRay( refr, depth - 1 );
-
-			refracted *= attenuation;
-		}
-
-		// Do we need to reflect?
-		if ( kr > 0.f )
-		{
-			Ray refl = getReflectedRay( r.direction, closestHit.normal, closestHit.coordinates );
-
-			reflected = shootRay( refl, depth - 1 );
-		}
-
-		color = reflected * kr + refracted * ( 1 - kr );
-	}
-	// Not refractive or reflective, or we've reached the end of the allowed depth
-	else
-	{
-		color = closestHit.mat.getDiffuse( closestHit.u, closestHit.v ) * lightIntensity;
-	}
-
-	return color;
-}
-
-vec3 Renderer::shadowRay( const Hit &h, const Light *l ) const
-{
-	Ray shadowRay;
-	float dist;
-	float intensity;
-	float inverseSquare;
-	vec3 dir;
-
-	if ( l->type == LightType::DIRECTIONAL_LIGHT )
-	{
-		dist = FLT_MAX;
-		dir = -1.f * l->direction;
-		dir.normalize();
-		inverseSquare = 1.f;
-		intensity = l->intensity;
-	}
-	else if ( l->type == LightType::POINT_LIGHT )
-	{
-		dir = l->origin - h.coordinates;
-		dist = dir.length();
-		dir.normalize();
-		inverseSquare = 1 / ( dist * dist );
-		intensity = l->intensity;
-	}
-	else if ( l->type == LightType::SPOT_LIGHT )
-	{
-		// A spotlight is essentially a point light, but we limit the response to a specific range of incoming angles
-		dir = l->origin - h.coordinates;
-		dist = dir.length();
-		dir.normalize();
-
-		// The dot product of 2 vectors is the cos(theta) of  the angle, theta, between the vectors
-		// As we store the fov of the spotlight in degrees, we first calculate the cos of the fov to compare to the dot product
-		float angle = cos( l->fov );
-		// Make dir and the light direction point in roughly the same direction to calculate the angle
-		float dot = l->direction.dot( -dir );
-
-		if ( angle > dot )
-		{
-			return vec3();
-		}
-		else
-		{
-			intensity = l->intensity;
-			inverseSquare = 1 / ( dist * dist );
-		}
-	}
-
-	float dot = h.normal.dot( dir );
-	if ( dot > 0 )
-	{
-		shadowRay.direction = dir;
-		shadowRay.origin = h.coordinates + ( SHADOWBIAS * dir );
-
-		Hit shdw;
-
-#ifdef LINEAR_TRAVERSE
-		// Find nearest hit
 		for ( Primitive *p : primitives )
 		{
-			Hit tmp = p->hit( shadowRay );
+			Hit tmp = p->hit( diffray );
 			if ( tmp.hitType != 0 )
 			{
-				if ( tmp.t < shdw.t )
+				if ( tmp.t < newHit.t )
 				{
-					shdw = tmp;
+					newHit = tmp;
 				}
 			}
 		}
-#endif
-#ifdef USE_BVH
-		shdw = bvh.intersect( shadowRay );
-#endif
 
-		if ( shdw.hitType != 0 && shdw.t < dist )
+		// No hit for the diffused ray
+		if ( newHit.t == FLT_MAX )
 		{
-			return vec3();
+			return vec3( 0.f, 0.f, 0.f );
 		}
-		else
+
+		// Does diffused ray hit a light source?
+		if ( newHit.mat.type == EMIT_MAT )
 		{
-			return l->color * dot * intensity * inverseSquare;
+			vec3 BRDF = closestHit.mat.albedo * ( 1 / PI );
+			vec3 cos_i = dot( diffray.direction, closestHit.normal );
+			directDiffuse = BRDF * newHit.mat.emission * cos_i;
 		}
 	}
-	else
-	{
-		return vec3();
-	}
-}
 
-void Renderer::invalidatePrebuffer()
-{
-	for ( size_t i = 0; i < SCRWIDTH * SCRHEIGHT; i++ )
-	{
-		prebuffer[i] = vec3();
-	}
-
-	currentSample = 1;
+	return directDiffuse * 2 * ( PI / SAMPLES );
 }
 
 Pixel Renderer::rgb( float r, float g, float b ) const

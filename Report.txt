@@ -2,12 +2,27 @@ Made by:
 Mathijs de Boer (5686857)
 Konstantinos Ntatsis (6591884)
 
+-- ASSIGNMENT 2 --
+NOTE:
+Running in Win32 works x64, however seems to not play nice with the SAH and Binning.
+
+Passing Grade Requirements:
+-	Implemented BVH over >10k primitives <- Mathijs
+	-	Scene contains ~92k triangles and 3 lights
+-	Ray/Scene intersection through BVH <- Mathijs
+-	Performance improvements over linear traversal
+
+Additional Points:
+-	SAH <- Konstantinos
+-	Binning <- Konstantinos
+
+-- ASSIGNMENT 1 --
 Notes about division of work:
 Konstantinos has little experience with C++, and no prior experience with graphics.
 The apparent imbalance in division is more due to the relative speed between how fast we implement new features.
 Another note, the texture code only works on Konstantinos' PC. As we cannot confirm that the code is correct, we did not include it in this version of the project
 
-Passing grade requirements:
+Passing Grade Requirements:
 -	Generic and extensible RT <- Both
 -	Free Camera <- Mathijs
 -	Controls to move camera <- Mathijs
