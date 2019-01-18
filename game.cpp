@@ -32,7 +32,7 @@ void Game::Init()
 	
 	// Light
 	mat.albedo = vec3( 1.f, 1.f, 1.f );
-	mat.emission = vec3( 2.2f, 1.8f, 1.5f );
+	mat.emission = vec3( 10.f, 10.f, 10.f );
 	mat.type = MaterialType::EMIT_MAT;
 	scene.push_back( new Sphere( vec3( 0.f, -10.f, 15.f ), 3.f, mat ) );
 

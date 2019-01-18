@@ -224,7 +224,7 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 		{
 			vec3 BRDF = closestHit.mat.albedo * ( 1 / PI );
 			vec3 cos_i = dot( diffray.direction, closestHit.normal );
-			directDiffuse = 2 * PI * BRDF * newHit.mat.emission * cos_i;
+			directDiffuse = BRDF * newHit.mat.emission * cos_i;
 		}
 	}
 	
