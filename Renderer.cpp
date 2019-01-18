@@ -176,8 +176,11 @@ vec3 getPointOnHemi()
 	float r2 = uniform_dist( mt );
 
 	Sample s;
-	// vec3 point = s.cosineSampleHemisphere( r1, r2 ); // Does not work as expected!
+#ifdef IMPORTANCE_SAMPLING
+	vec3 point = s.cosineSampleHemisphere( r1, r2 ); // Does not work as expected!
+#else
 	vec3 point = s.uniformSampleHemisphere( r1, r2 );
+#endif
 
 	return point;
 }
@@ -243,16 +246,43 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 	vec3 Nt, Nb;
 	createLocalCoordinateSystem( closestHit.normal, Nt, Nb );
 
-	// Calculate random diffused ray
+	// Calculate random diffused ray (cosine weighted or uniform depending if "IS" on)
 	Ray diffray;
-	diffray.direction = calculateDiffuseRayDir( closestHit.normal, Nt, Nb );
 	diffray.origin = closestHit.coordinates + REFLECTIONBIAS * diffray.direction;
+	diffray.direction = calculateDiffuseRayDir( closestHit.normal, Nt, Nb );
 
+#ifdef IMPORTANCE_SAMPLING // Still does not work !
+	// Importance sampling (slide 47- lecture 8,9)
+	vec3 PDF = dot( closestHit.normal, diffray.direction ) / PI;
+#else
+	vec3 PDF = 1 / ( 2 * PI );
+#endif
+
+	// Update light accumulutation
 	vec3 BRDF = closestHit.mat.albedo * ( 1 / PI );
 	vec3 Ei = shootRay( diffray, depth - 1 ) * dot( closestHit.normal, diffray.direction );
+	// No / operator !
+	// Dont divide with zero ! - Put the following in some function ???
+	if ( PDF.x > 0 )
+		PDF.x = std::max( EPSILON, PDF.x );
+	else
+		PDF.x = std::min( -EPSILON, PDF.x );
 
+	if ( PDF.y > 0 )
+		PDF.y = std::max( EPSILON, PDF.y );
+	else
+		PDF.y = std::min( -EPSILON, PDF.y );
 
-	return PI * 2.0f * BRDF * Ei;
+	if ( PDF.z > 0 )
+		PDF.z = std::max( EPSILON, PDF.z );
+	else
+		PDF.z = std::min( -EPSILON, PDF.z );
+
+	Ei.x = Ei.x / PDF.x;
+	Ei.y = Ei.y / PDF.y;
+	Ei.z = Ei.z / PDF.z;
+
+	return BRDF * Ei;
 }
 
 Pixel Renderer::rgb( float r, float g, float b ) const

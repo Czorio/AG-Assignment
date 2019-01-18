@@ -7,8 +7,8 @@ vec3 Sample::cosineSampleHemisphere( const float &u1, const float &u2 )
 	const float r = sqrt( u1 );
 	const float theta = 2 * PI * u2;
 
-	const float x = r * cos( theta );
-	const float y = r * sin( theta );
+	const float x = r * cosf( theta );
+	const float y = r * sinf( theta );
 
 	return vec3( x, y, sqrt( std::max( 0.f, 1 - u1 ) ) );
 }

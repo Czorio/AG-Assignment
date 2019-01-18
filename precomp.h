@@ -16,6 +16,7 @@
 //#define LINEAR_TRAVERSE
 #define USE_SAH
 #define USE_BVH
+#define IMPORTANCE_SAMPLING
 //#define BVH_DEBUG
 #define BVHDEPTH 128
 #define BINCOUNT 16 // this can also be reduced for faster construction
