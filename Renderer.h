@@ -25,7 +25,7 @@ class Renderer
 	const BVH bvh;
 	// vector<Light *> lights;
 
-	unsigned currentSample;
+	unsigned currentIteration;
 	vec3 *prebuffer;
 	Pixel *buffer;
 	bool *boolbuffer; // TEST

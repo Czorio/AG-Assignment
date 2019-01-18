@@ -2,7 +2,7 @@
 
 Renderer::Renderer( vector<Primitive *> primitives ) : bvh( BVH( primitives ) )
 {
-	currentSample = 1;
+	currentIteration = 1;
 
 	prebuffer = new vec3[SCRWIDTH * SCRHEIGHT];
 
@@ -41,7 +41,7 @@ Renderer::~Renderer()
 
 void Renderer::renderFrame()
 {
-	if ( currentSample < SAMPLES )
+	if ( currentIteration < ITERATIONS )
 	{
 #pragma omp parallel for
 		for ( int i = 0; i < tiles.size(); i++ )
@@ -60,7 +60,7 @@ void Renderer::renderFrame()
 				}
 			}
 		}
-		currentSample++;
+		currentIteration++;
 	}
 	else
 	{
@@ -76,7 +76,7 @@ void Renderer::invalidatePrebuffer()
 		prebuffer[i] = vec3( 0.f, 0.f, 0.f );
 	}
 
-	currentSample = 1;
+	currentIteration = 1;
 }
 
 void Renderer::setCamera( Camera cam )
@@ -127,7 +127,7 @@ Pixel *Renderer::getOutput() const
 {
 	// currentSample - 1 because it is increased in the renderFrame() function in preparation of the next frame.
 	// Unfortunately, we are getting the current frame, so we get currentSample - 1.
-	float importance = 1.f / float( currentSample - 1 );
+	float importance = 1.f / float( currentIteration - 1 );
 	for ( unsigned i = 0; i < SCRWIDTH * SCRHEIGHT; i++ )
 	{
 		buffer[i] = rgb( gammaCorrect( prebuffer[i] * importance ) );
@@ -186,13 +186,13 @@ void createLocalCoordinateSystem( const vec3 &N, vec3 &Nt, vec3 &Nb )
 {
 	// This came out of my head - maybe there is better option
 	// However, two other things tested did not work (scratchapixel & gpu blog)
-	if ( abs(N.z) > EPSILON )
+	if ( abs( N.z ) > EPSILON )
 	{
 		Nt.x = 1.5 * N.x; // arbitary
 		Nt.y = 1.5 * N.y; // arbitary
 		Nt.z = -( Nt.x * N.x + Nt.y * N.y ) / N.z;
 	}
-	else if ( abs(N.y) > EPSILON )
+	else if ( abs( N.y ) > EPSILON )
 	{
 		Nt.x = 1.5 * N.x; // arbitary
 		Nt.z = 1.5 * N.z; // arbitary
@@ -205,27 +205,14 @@ void createLocalCoordinateSystem( const vec3 &N, vec3 &Nt, vec3 &Nb )
 		Nt.x = -( Nt.y * N.y + Nt.z * N.z ) / N.x;
 	}
 	Nt = normalize( Nt );
-	Nb = normalize(cross( N, Nt ));
+	Nb = normalize( cross( N, Nt ) );
 }
 
 vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 {
-	vec3 directDiffuse = vec3(0.f, 0.f, 0.f);
+	vec3 directDiffuse = vec3( 0.f, 0.f, 0.f );
 
-	Hit closestHit;
-	closestHit.t = FLT_MAX;
-	// Find nearest hit
-	for ( Primitive *p : primitives )
-	{
-		Hit tmp = p->hit( r );
-		if ( tmp.hitType != 0 )
-		{
-			if ( tmp.t < closestHit.t )
-			{
-				closestHit = tmp;
-			}
-		}
-	}
+	Hit closestHit = bvh.intersect( r );
 
 	// No hit
 	if ( closestHit.t == FLT_MAX )
@@ -240,52 +227,55 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 	vec3 Nt, Nb;
 	createLocalCoordinateSystem( closestHit.normal, Nt, Nb );
 
-	// Sample the random point on unit hemisphere
-	vec3 pointOnHemi = getPointOnHemi();
-
-	// Transform point vector to the local coordinate system of the hit point
-	// https://www.scratchapixel.com/lessons/3d-basic-rendering/global-illumination-path-tracing/global-illumination-path-tracing-practical-implementation
-	vec3 newdir(
-		pointOnHemi.x * Nb.x + pointOnHemi.y * closestHit.normal.x + pointOnHemi.z * Nt.x,
-		pointOnHemi.x * Nb.y + pointOnHemi.y * closestHit.normal.y + pointOnHemi.z * Nt.y,
-		pointOnHemi.x * Nb.z + pointOnHemi.y * closestHit.normal.z + pointOnHemi.z * Nt.z );
-
-	// Diffused ray with the calculated random direction and origin same as the hit point
-	Ray diffray;
-	diffray.direction = normalize(newdir);
-	diffray.origin = closestHit.coordinates;
-
-	// Cast the random ray and find new intersection
-	Hit newHit;
-	newHit.t = FLT_MAX;
-	
-	for ( Primitive *p : primitives )
+	for ( int i = 0; i < SAMPLES; ++i )
 	{
-		Hit tmp = p->hit( diffray );
-		if ( tmp.hitType != 0 )
+		// Sample the random point on unit hemisphere
+		vec3 pointOnHemi = getPointOnHemi();
+
+		// Transform point vector to the local coordinate system of the hit point
+		// https://www.scratchapixel.com/lessons/3d-basic-rendering/global-illumination-path-tracing/global-illumination-path-tracing-practical-implementation
+		vec3 newdir(
+			pointOnHemi.x * Nb.x + pointOnHemi.y * closestHit.normal.x + pointOnHemi.z * Nt.x,
+			pointOnHemi.x * Nb.y + pointOnHemi.y * closestHit.normal.y + pointOnHemi.z * Nt.y,
+			pointOnHemi.x * Nb.z + pointOnHemi.y * closestHit.normal.z + pointOnHemi.z * Nt.z );
+
+		// Diffused ray with the calculated random direction and origin same as the hit point
+		Ray diffray;
+		diffray.direction = normalize( newdir );
+		diffray.origin = closestHit.coordinates;
+
+		// Cast the random ray and find new intersection
+		Hit newHit;
+		newHit.t = FLT_MAX;
+
+		for ( Primitive *p : primitives )
 		{
-			if ( tmp.t < newHit.t )
+			Hit tmp = p->hit( diffray );
+			if ( tmp.hitType != 0 )
 			{
-				newHit = tmp;
+				if ( tmp.t < newHit.t )
+				{
+					newHit = tmp;
+				}
 			}
 		}
+
+		// No hit for the diffused ray
+		if ( newHit.t == FLT_MAX )
+		{
+			return vec3( 0.f, 0.f, 0.f );
+		}
+
+		// Does diffused ray hit a light source?
+		if ( newHit.mat.type == EMIT_MAT )
+		{
+			vec3 BRDF = closestHit.mat.albedo * ( 1 / PI );
+			vec3 cos_i = dot( diffray.direction, closestHit.normal );
+			directDiffuse = BRDF * newHit.mat.emission * cos_i;
+		}
 	}
-	
-	// No hit for the diffused ray
-	if ( newHit.t == FLT_MAX )
-	{
-		return vec3(0.f, 0.f, 0.f);
-	}
-	
-	// Does diffused ray hit a light source?
-	if ( newHit.mat.type == EMIT_MAT )
-	{
-		vec3 BRDF = closestHit.mat.albedo * (1 / PI);
-		vec3 cos_i = dot( diffray.direction, closestHit.normal );
-		directDiffuse = 2 * PI * BRDF * newHit.mat.emission * cos_i;
-	}
-	
-	return directDiffuse;
+
+	return directDiffuse * 2 * ( PI / SAMPLES );
 }
 
 Pixel Renderer::rgb( float r, float g, float b ) const
