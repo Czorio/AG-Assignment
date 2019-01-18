@@ -32,7 +32,6 @@ class Renderer
 
 	vec3 shootRay( unsigned x, unsigned y, unsigned depth ) const;
 	vec3 shootRay( const Ray &r, unsigned depth ) const;
-
 	void invalidatePrebuffer();
 
 	// rgb to Pixel

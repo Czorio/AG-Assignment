@@ -20,7 +20,7 @@
 #define BVHDEPTH 128
 #define BINCOUNT 16 // this can also be reduced for faster construction
 
-#define MAXRAYDEPTH 8
+#define MAXRAYDEPTH 4
 #define SAMPLES 4
 #define ITERATIONS 1024
 
