@@ -203,6 +203,22 @@ void createLocalCoordinateSystem( const vec3 &N, vec3 &Nt, vec3 &Nb )
 	Nb = normalize( cross( N, Nt ) );
 }
 
+vec3 calculateDiffuseRayDir( const vec3 &N, const vec3 &Nt, const vec3 &Nb )
+{
+	// Sample the random point on unit hemisphere
+	vec3 pointOnHemi = getPointOnHemi();
+
+	// Transform point vector to the local coordinate system of the hit point
+	// https://www.scratchapixel.com/lessons/3d-basic-rendering/global-illumination-path-tracing/global-illumination-path-tracing-practical-implementation
+	vec3 newdir(
+		pointOnHemi.x * Nb.x + pointOnHemi.y * N.x + pointOnHemi.z * Nt.x,
+		pointOnHemi.x * Nb.y + pointOnHemi.y * N.y + pointOnHemi.z * Nt.y,
+		pointOnHemi.x * Nb.z + pointOnHemi.y * N.z + pointOnHemi.z * Nt.z );
+
+	// Diffused ray with the calculated random direction and origin same as the hit point
+	return normalize( newdir );
+}
+
 vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 {
 	vec3 directDiffuse = vec3( 0.f, 0.f, 0.f );
@@ -224,22 +240,12 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 
 	for ( int i = 0; i < SAMPLES; ++i )
 	{
-		// Sample the random point on unit hemisphere
-		vec3 pointOnHemi = getPointOnHemi();
-
-		// Transform point vector to the local coordinate system of the hit point
-		// https://www.scratchapixel.com/lessons/3d-basic-rendering/global-illumination-path-tracing/global-illumination-path-tracing-practical-implementation
-		vec3 newdir(
-			pointOnHemi.x * Nb.x + pointOnHemi.y * closestHit.normal.x + pointOnHemi.z * Nt.x,
-			pointOnHemi.x * Nb.y + pointOnHemi.y * closestHit.normal.y + pointOnHemi.z * Nt.y,
-			pointOnHemi.x * Nb.z + pointOnHemi.y * closestHit.normal.z + pointOnHemi.z * Nt.z );
-
-		// Diffused ray with the calculated random direction and origin same as the hit point
+		// Calculate random diffused ray
 		Ray diffray;
-		diffray.direction = normalize( newdir );
-		diffray.origin = closestHit.coordinates;
+		diffray.direction = calculateDiffuseRayDir( closestHit.normal, Nt, Nb );
+		diffray.origin = closestHit.coordinates + REFLECTIONBIAS * diffray.direction;
 
-		// Cast the random ray and find new intersection
+		// Find the intersections of the diffused ray
 		Hit newHit;
 		newHit.t = FLT_MAX;
 
