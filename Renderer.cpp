@@ -32,6 +32,9 @@ Renderer::~Renderer()
 		delete primitives[i];
 	}
 
+	delete[] prebuffer;
+	prebuffer = nullptr;
+
 	delete[] buffer;
 	buffer = nullptr;
 }
@@ -89,12 +92,14 @@ Camera *Renderer::getCamera()
 // As preparation for iterative rendering
 void Renderer::moveCam( vec3 vec )
 {
+	invalidatePrebuffer();
 	cam.move( vec );
 }
 
 // As preparation for iterative rendering
 void Renderer::rotateCam( vec3 vec )
 {
+	invalidatePrebuffer();
 	cam.rotate( vec );
 }
 
@@ -279,42 +284,42 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 	return directDiffuse * 2 * ( PI / SAMPLES );
 }
 
-	Pixel Renderer::rgb( float r, float g, float b ) const
-	{
-		clampFloat( r, 0.f, 1.f );
-		clampFloat( g, 0.f, 1.f );
-		clampFloat( b, 0.f, 1.f );
+Pixel Renderer::rgb( float r, float g, float b ) const
+{
+	clampFloat( r, 0.f, 1.f );
+	clampFloat( g, 0.f, 1.f );
+	clampFloat( b, 0.f, 1.f );
 
-		unsigned char cr = r * 255;
-		unsigned char cg = g * 255;
-		unsigned char cb = b * 255;
+	unsigned char cr = r * 255;
+	unsigned char cg = g * 255;
+	unsigned char cb = b * 255;
 
-		Color c;
-		c.c.a = 255; // alpha
-		c.c.r = cr;  // red
-		c.c.g = cg;  // green
-		c.c.b = cb;  // blue
+	Color c;
+	c.c.a = 255; // alpha
+	c.c.r = cr;  // red
+	c.c.g = cg;  // green
+	c.c.b = cb;  // blue
 
-		return c.pixel;
-	}
+	return c.pixel;
+}
 
-	Pixel Renderer::rgb( vec3 vec ) const
-	{
-		return rgb( vec.x, vec.y, vec.z );
-	}
+Pixel Renderer::rgb( vec3 vec ) const
+{
+	return rgb( vec.x, vec.y, vec.z );
+}
 
-	union simdVector {
-		__m128 v;   // SSE 4 x float vector
-		float a[4]; // scalar array of 4 floats
-	};
+union simdVector {
+	__m128 v;   // SSE 4 x float vector
+	float a[4]; // scalar array of 4 floats
+};
 
-	vec3 Renderer::gammaCorrect( vec3 vec ) const
-	{
-		__m128 val = _mm_set_ps( vec.x, vec.y, vec.z, vec.dummy );
-		__m128 corrected = _mm_sqrt_ps( val );
+vec3 Renderer::gammaCorrect( vec3 vec ) const
+{
+	__m128 val = _mm_set_ps( vec.x, vec.y, vec.z, vec.dummy );
+	__m128 corrected = _mm_sqrt_ps( val );
 
-		simdVector convert;
-		convert.v = corrected;
-		vec3 res = vec3( convert.a[3], convert.a[2], convert.a[1] );
-		return res;
-	}
+	simdVector convert;
+	convert.v = corrected;
+	vec3 res = vec3( convert.a[3], convert.a[2], convert.a[1] );
+	return res;
+}
