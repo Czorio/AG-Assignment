@@ -26,7 +26,7 @@
 #define ITERATIONS 1024
 
 #define SHADOWBIAS 0.001f
-#define REFLECTIONBIAS 0.001f
+#define REFLECTIONBIAS 0.1f
 #define REFRACTIONBIAS 0.001f
 #define EPSILON 0.0001f
 
@@ -98,10 +98,10 @@ using namespace Tmpl8;
 #include "Light.h"
 #include "Ray.h"
 #include "Camera.h"
+#include "Sample.h"
 #include "Primitive.h"
 #include "OBJLoader.h"
 #include "BVH.h"
-#include "Sample.h"
 #include "Renderer.h"
 
 #include "game.h"

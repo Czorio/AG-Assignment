@@ -15,6 +15,9 @@ struct Primitive
 
 	virtual Hit hit( const Ray &ray ) const = 0;
 	virtual aabb volume() const = 0;
+	virtual vec3 getRandomSurfacePoint( const vec3 &sensorPoint ) const = 0; // NEE, to sample point on light
+	virtual float getArea() const = 0; // NEE, to sample point on light
+	virtual vec3 getNormal( const vec3 &pointOnSurface ) const = 0;
 };
 
 struct Sphere : public Primitive
@@ -135,6 +138,40 @@ struct Sphere : public Primitive
 	{
 		aabb bounds = aabb( origin - vec3( radius + EPSILON, radius + EPSILON, radius + EPSILON ), origin + vec3( radius + EPSILON, radius + EPSILON, radius + EPSILON ) );
 		return bounds;
+	}
+
+	vec3 getRandomSurfacePoint( const vec3 &sensorPoint ) const override
+	{
+		// Get a random point on hemisphere with unit radius
+		vec3 unitPoint = Sample::uniformSampleHemisphere( Rand( 1 ), Rand( 1 ) ); // care with the randoms here
+
+		// Transform the point to be on the surface part that is visible by the sensor point
+		// N connects the origin of the sphere and the point we do the calculations for (sensor)
+		vec3 N = normalize( sensorPoint - this->origin );
+		vec3 Nt, Nb;
+		// Create coordinate system
+		Sample::createLocalCoordinateSystem( N, Nt, Nb );
+
+		vec3 surfacePoint(
+			unitPoint.x * Nb.x + unitPoint.y * N.x + unitPoint.z * Nt.x,
+			unitPoint.x * Nb.y + unitPoint.y * N.y + unitPoint.z * Nt.y,
+			unitPoint.x * Nb.z + unitPoint.y * N.z + unitPoint.z * Nt.z );
+
+		// Normalize and the multiply by radius so that it is on the sphere surface
+		surfacePoint = this->origin + normalize( surfacePoint ) * this->radius;
+
+		return surfacePoint;
+	}
+
+	float getArea() const override
+	{
+		// Visible area of sphere from any point is a circe, r2 = radius * radius
+		return PI * r2;
+	}
+
+	vec3 getNormal(const vec3 &pointOnSurface) const override
+	{
+		return normalize( pointOnSurface - origin );
 	}
 };
 
@@ -289,5 +326,21 @@ struct Triangle : public Primitive
 		bounds.Grow( vec3( v1.x + EPSILON, v1.y + EPSILON, v1.z + EPSILON ) );
 		bounds.Grow( vec3( v2.x + EPSILON, v2.y + EPSILON, v2.z + EPSILON ) );
 		return bounds;
+	}
+
+	// Need to implement this? - Lights made of triangles?
+	vec3 getRandomSurfacePoint( const vec3 &sensorPoint ) const override
+	{
+		return vec3( 0.f, 0.f, 0.f );
+	}
+
+	float getArea() const override // Next event estimation
+	{
+		return 0;
+	}
+
+	vec3 getNormal(const vec3 &pointOnSurface) const override // Next event estimation
+	{
+		return vec3(0.f, 0.f, 0.f);
 	}
 };

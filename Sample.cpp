@@ -24,3 +24,29 @@ vec3 Sample::uniformSampleHemisphere( const float &r1, const float &r2 )
 	float z = sinTheta * sinf( phi );
 	return vec3( x, r1, z );
 }
+
+void Sample::createLocalCoordinateSystem( const vec3 &N, vec3 &Nt, vec3 &Nb )
+{
+	// This came out of my head - maybe there is better option
+	// However, two other things tested did not work (scratchapixel & gpu blog)
+	if ( abs( N.z ) > EPSILON )
+	{
+		Nt.x = 1.5 * N.x; // arbitary
+		Nt.y = 1.5 * N.y; // arbitary
+		Nt.z = -( Nt.x * N.x + Nt.y * N.y ) / N.z;
+	}
+	else if ( abs( N.y ) > EPSILON )
+	{
+		Nt.x = 1.5 * N.x; // arbitary
+		Nt.z = 1.5 * N.z; // arbitary
+		Nt.y = -( Nt.x * N.x + Nt.z * N.z ) / N.y;
+	}
+	else
+	{
+		Nt.y = 1.5 * N.y; // arbitary
+		Nt.z = 1.5 * N.z; // arbitary
+		Nt.x = -( Nt.y * N.y + Nt.z * N.z ) / N.x;
+	}
+	Nt = normalize( Nt );
+	Nb = normalize( cross( N, Nt ) );
+}

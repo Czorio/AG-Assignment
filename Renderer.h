@@ -23,7 +23,8 @@ class Renderer
 	Camera cam;
 	vector<Primitive *> primitives;
 	const BVH bvh;
-	// vector<Light *> lights;
+	//vector<Primitive *> lights; 
+	vector<uint> lightIndices; // for Next Event Estimation
 
 	unsigned currentIteration;
 	vec3 *prebuffer;
@@ -32,6 +33,7 @@ class Renderer
 
 	vec3 shootRay( unsigned x, unsigned y, unsigned depth ) const;
 	vec3 shootRay( const Ray &r, unsigned depth ) const;
+	void randomPointOnLight( const vec3 &sensePoint, vec3 &randomPoint, float &randomLightArea, vec3 &lightNormal ) const;
 	void invalidatePrebuffer();
 
 	// rgb to Pixel

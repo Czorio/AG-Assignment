@@ -23,6 +23,15 @@ Renderer::Renderer( vector<Primitive *> primitives ) : bvh( BVH( primitives ) )
 	}
 
 	this->primitives = primitives;
+
+	// Create a vector with the primitives that are light sources
+	// Handy for the Next Event Estimation
+	uint count = 0;
+	for ( auto prim : primitives )
+	{
+		if ( prim->mat.type == EMIT_MAT )
+			lightIndices.push_back( count++ );
+	}
 }
 
 Renderer::~Renderer()
@@ -175,41 +184,16 @@ vec3 getPointOnHemi()
 	float r1 = uniform_dist( mt );
 	float r2 = uniform_dist( mt );
 
-	Sample s;
 #ifdef IMPORTANCE_SAMPLING
-	vec3 point = s.cosineSampleHemisphere( r1, r2 ); // Does not work as expected!
+	vec3 point = Sample::cosineSampleHemisphere( r1, r2 ); // Does not work as expected!
 #else
-	vec3 point = s.uniformSampleHemisphere( r1, r2 );
+	vec3 point = Sample::uniformSampleHemisphere( r1, r2 );
 #endif
 
 	return point;
 }
 
-void createLocalCoordinateSystem( const vec3 &N, vec3 &Nt, vec3 &Nb )
-{
-	// This came out of my head - maybe there is better option
-	// However, two other things tested did not work (scratchapixel & gpu blog)
-	if ( abs( N.z ) > EPSILON )
-	{
-		Nt.x = 1.5 * N.x; // arbitary
-		Nt.y = 1.5 * N.y; // arbitary
-		Nt.z = -( Nt.x * N.x + Nt.y * N.y ) / N.z;
-	}
-	else if ( abs( N.y ) > EPSILON )
-	{
-		Nt.x = 1.5 * N.x; // arbitary
-		Nt.z = 1.5 * N.z; // arbitary
-		Nt.y = -( Nt.x * N.x + Nt.z * N.z ) / N.y;
-	}
-	else
-	{
-		Nt.y = 1.5 * N.y; // arbitary
-		Nt.z = 1.5 * N.z; // arbitary
-		Nt.x = -( Nt.y * N.y + Nt.z * N.z ) / N.x;
-	}
-	Nt = normalize( Nt );
-	Nb = normalize( cross( N, Nt ) );
-}
+
 
 vec3 calculateDiffuseRayDir( const vec3 &N, const vec3 &Nt, const vec3 &Nb )
 {
@@ -227,6 +211,15 @@ vec3 calculateDiffuseRayDir( const vec3 &N, const vec3 &Nt, const vec3 &Nb )
 	return normalize( newdir );
 }
 
+void Renderer::randomPointOnLight( const vec3 &sensorPoint, vec3 &randomPoint, float &randomLightArea, vec3 &lightNormal ) const
+{
+	int randomLight = (int)Rand(lightIndices.size());
+	// CHECK: DOES THE NEXT ONE WORK AS EXPECTED?
+	randomPoint = primitives[randomLight]->getRandomSurfacePoint( sensorPoint );
+	randomLightArea = primitives[randomLight]->getArea();
+	lightNormal = primitives[randomLight]->getNormal(randomPoint);
+}
+
 vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 {
 	if ( depth > MAXRAYDEPTH ) return vec3( 0.f, 0.f, 0.f );
@@ -234,19 +227,58 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 	Hit closestHit = bvh.intersect( r );
 
 	// No hit
-	if ( closestHit.t == FLT_MAX  )
+	if ( closestHit.t == FLT_MAX )
 	{
 		return vec3( 0.f, 0.f, 0.f );
 	}
 
+	// Next Event Estimation
 	// Closest hit is light source
-	if ( closestHit.mat.type == EMIT_MAT ) return closestHit.mat.emission;
+	if ( closestHit.mat.type == EMIT_MAT )
+	{
+		switch ( r.type )
+		{
+		case RayType::INDIRECT_RAY:
+			return vec3( 0.f, 0.f, 0.f );
+			break;
+		default:
+			return closestHit.mat.emission;
+			break;
+		}
+	}
+	// Closest hit is object/primitive but ray is light ray
+	// Does not work for cases where light source is obstracted by another light source
+	// Currently: does not work for mirrors!
+	if ( closestHit.mat.type != EMIT_MAT && r.type == RayType::LIGHT_RAY )
+		return vec3( 0.f, 0.f, 0.f );
 
 	// Create the local coordinate system of the hit point
 	vec3 Nt, Nb;
-	createLocalCoordinateSystem( closestHit.normal, Nt, Nb );
+	Sample::createLocalCoordinateSystem( closestHit.normal, Nt, Nb );
 
-	// Calculate random diffused ray (cosine weighted or uniform depending if "IS" on)
+	// Calculate direct ray (aiming to a random light)
+	float randomLightArea;
+	vec3 randomPoint;
+	vec3 lightNormal;
+	Renderer::randomPointOnLight( closestHit.coordinates, randomPoint, randomLightArea, lightNormal );
+
+	// As in slide 18 (lecture "Path Tracing")
+	vec3 L = randomPoint - closestHit.coordinates;
+	float distance = L.length();
+	L = normalize( L );
+	float cos_o = dot( -L, lightNormal ); // CHECK
+	float cos_i = dot( L, closestHit.normal ); // CHECK
+	if ( ( cos_o <= 0 ) || ( cos_i <= 0 ) )
+		return vec3( 0.f, 0.f, 0.f );
+
+	// Shoot the direct ray (light ray)
+	Ray directRay;
+	directRay.direction = L;
+	directRay.origin = closestHit.coordinates;
+	directRay.type = RayType::LIGHT_RAY;
+	vec3 Ld = shootRay( directRay, 0 ); // no splitting for light rays, depth=0 
+
+	// Calculate random diffused ray (cosine weighted or uniform depending if "I.S." on)
 	Ray diffray;
 	diffray.origin = closestHit.coordinates + REFLECTIONBIAS * diffray.direction;
 	diffray.direction = calculateDiffuseRayDir( closestHit.normal, Nt, Nb );
@@ -282,7 +314,12 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 	Ei.y = Ei.y / PDF.y;
 	Ei.z = Ei.z / PDF.z;
 
-	return BRDF * Ei;
+	// Direct illumination calculations
+	// Slide 26 ("Variance reduction") -- LIGHT COLOR??
+	float solidAngle = ( cos_o * randomLightArea ) / ( distance * distance );
+	Ld = Ld * solidAngle * BRDF * cos_i;
+
+	return BRDF * Ei + Ld;
 }
 
 Pixel Renderer::rgb( float r, float g, float b ) const
