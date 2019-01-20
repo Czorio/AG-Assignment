@@ -13,11 +13,9 @@
 #define SCRHEIGHT 512
 #define TILESIZE 64
 
-//#define LINEAR_TRAVERSE
-#define USE_SAH
-#define USE_BVH
-//#define BVH_DEBUG
-#define BVHDEPTH 128
+#define BVH_DEBUG
+#define BVHDEPTH 64
+#define BVH_MIN_SAH_COUNT 4
 #define BINCOUNT 16 // this can also be reduced for faster construction
 
 #define MAXRAYDEPTH 4
@@ -67,7 +65,6 @@
 #include <thread>
 #include <tuple>
 #include <vector>
-#include <random>
 
 // Namespaced C headers:
 #include <cassert>

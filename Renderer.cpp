@@ -228,10 +228,14 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 {
 	if ( depth > MAXRAYDEPTH ) return vec3( 0.f, 0.f, 0.f );
 
+#ifdef BVH_DEBUG
+	return bvh.debug( r );
+#endif // DEBUG
+
 	Hit closestHit = bvh.intersect( r );
 
 	// No hit
-	if ( closestHit.t == FLT_MAX  )
+	if ( closestHit.t == FLT_MAX )
 	{
 		return vec3( 0.f, 0.f, 0.f );
 	}
@@ -250,7 +254,6 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 
 	vec3 BRDF = closestHit.mat.albedo * ( 1 / PI );
 	vec3 Ei = shootRay( diffray, depth - 1 ) * dot( closestHit.normal, diffray.direction );
-
 
 	return PI * 2.0f * BRDF * Ei;
 }

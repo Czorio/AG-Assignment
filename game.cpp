@@ -13,38 +13,10 @@ void Game::Init()
 
 	Material mat;
 	mat.type = MaterialType::LAMBERTIAN_MAT;
-	mat.albedo = vec3( 0.75f, 0.25f, 0.25f );
-	mat.emission = vec3( 0.f, 0.f, 0.f );
-
-	vector<Primitive *> scene;
-
-	// Light
-	mat.albedo = vec3( 1.f, 1.f, 1.f );
-	mat.emission = vec3( 10.f, 10.f, 10.f );
-	mat.type = MaterialType::EMIT_MAT;
-	scene.push_back( new Sphere( vec3( 0.f, -10.f, 15.f ), 3.f, mat ) );
-
-	// Spheres
-	mat.type = MaterialType::LAMBERTIAN_MAT;
-	mat.albedo = vec3( 0.25f, 0.25f, 0.25f );
-	mat.emission = vec3( 0.f, 0.f, 0.f );
-	scene.push_back( new Sphere( vec3( 0.f, 1e5f - 10.f, 15.f ), 1e5f, mat ) );
-
-	mat.albedo = vec3( 0.75f, 0.25f, 0.25f );
-	mat.emission = vec3( 0.f, 0.f, 0.f );
-	scene.push_back( new Sphere( vec3( 0.f, 1e5f + 5.f, 15.f ), 1e5f, mat ) );
-
 	mat.albedo = vec3( 0.25f, 0.25f, 0.75f );
 	mat.emission = vec3( 0.f, 0.f, 0.f );
-	scene.push_back( new Sphere( vec3( 0.f, 0.f, 1e5f + 20.f ), 1e5f, mat ) );
 
-	mat.albedo = vec3( 0.25f, 0.75f, 0.25f );
-	mat.emission = vec3( 0.f, 0.f, 0.f );
-	scene.push_back( new Sphere( vec3( -3.f, 0.f, 12.f ), 2.f, mat ) );
-
-	mat.albedo = vec3( 0.1f, 0.3f, 0.6f );
-	mat.emission = vec3( 0.f, 0.f, 0.f );
-	scene.push_back( new Sphere( vec3( 4.f, -2.5f, 12.f ), 2.f, mat ) );
+	vector<Primitive *> scene = loadOBJ( "assets/Monkey.obj", mat );
 
 	renderer = new Renderer( scene );
 	noPrim = scene.size();
@@ -175,7 +147,7 @@ void Game::Tick( float deltaTime )
 	}
 
 	// clear the graphics window
-	screen->Clear( 0 );   /// I COMMENTED THAT OUT
+	screen->Clear( 0 ); /// I COMMENTED THAT OUT
 
 	// Render the frame
 	timer t = timer();
