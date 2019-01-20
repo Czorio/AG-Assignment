@@ -89,14 +89,12 @@ Camera *Renderer::getCamera()
 	return &cam;
 }
 
-// As preparation for iterative rendering
 void Renderer::moveCam( vec3 vec )
 {
 	invalidatePrebuffer();
 	cam.move( vec );
 }
 
-// As preparation for iterative rendering
 void Renderer::rotateCam( vec3 vec )
 {
 	invalidatePrebuffer();
@@ -154,30 +152,14 @@ __inline void clampFloat( float &val, float lo, float hi )
 	}
 }
 
-// FROM Ray-tracer:
-//Ray getReflectedRay( const vec3 &incoming, const vec3 &normal, const vec3 &hitLocation )
-//{
-//	Ray r;
-//	vec3 outgoing = incoming - 2.f * incoming.dot( normal ) * normal;
-//	r.origin = hitLocation + ( REFLECTIONBIAS * outgoing );
-//	r.direction = outgoing;
-//
-//	return r;
-//}
-
-// Random generator - needs to move somewhere else (?)
-std::random_device rd;
-std::mt19937 mt( rd() );
-std::uniform_real_distribution<float> uniform_dist( 0.f, 1.f );
-
 vec3 getPointOnHemi()
 {
-	float r1 = uniform_dist( mt );
-	float r2 = uniform_dist( mt );
+	vec3 point;
 
-	Sample s;
-	// vec3 point = s.cosineSampleHemisphere( r1, r2 ); // Does not work as expected!
-	vec3 point = s.uniformSampleHemisphere( r1, r2 );
+	do
+	{
+		point = 2.f * vec3( Rand( 1.f ), Rand( 1.f ), Rand( 1.f ) ) - vec3( 1.f, 1.f, 1.f );
+	} while ( point.sqrLentgh() >= 1 );
 
 	return point;
 }
@@ -230,7 +212,7 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 
 #ifdef BVH_DEBUG
 	return bvh.debug( r );
-#endif // DEBUG
+#endif
 
 	Hit closestHit = bvh.intersect( r );
 

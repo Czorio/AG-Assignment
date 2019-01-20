@@ -14,9 +14,6 @@
     <ClCompile Include="OBJLoader.cpp">
       <Filter>Base Code</Filter>
     </ClCompile>
-    <ClCompile Include="Sample.cpp">
-      <Filter>Base Code</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="game.h" />
@@ -55,9 +52,6 @@
       <Filter>Base Code</Filter>
     </ClInclude>
     <ClInclude Include="OBJLoader.h">
-      <Filter>Base Code</Filter>
-    </ClInclude>
-    <ClInclude Include="Sample.h">
       <Filter>Base Code</Filter>
     </ClInclude>
   </ItemGroup>

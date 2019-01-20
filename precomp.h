@@ -13,14 +13,14 @@
 #define SCRHEIGHT 512
 #define TILESIZE 64
 
-#define BVH_DEBUG
-#define BVHDEPTH 64
-#define BVH_MIN_SAH_COUNT 4
-#define BINCOUNT 16 // this can also be reduced for faster construction
+//#define BVH_DEBUG
+#define BVHDEPTH 4
+#define BVH_MIN_SAH_COUNT 8
+#define BINCOUNT 8 // this can also be reduced for faster construction
 
 #define MAXRAYDEPTH 4
 #define SAMPLES 4
-#define ITERATIONS 1024
+#define ITERATIONS 1024 * 16
 
 #define SHADOWBIAS 0.001f
 #define REFLECTIONBIAS 0.001f
@@ -97,7 +97,6 @@ using namespace Tmpl8;
 #include "Primitive.h"
 #include "OBJLoader.h"
 #include "BVH.h"
-#include "Sample.h"
 #include "Renderer.h"
 
 #include "game.h"
