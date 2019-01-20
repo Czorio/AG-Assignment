@@ -24,7 +24,7 @@ struct BVHNode
 	void subdivide( int currentDepth )
 	{
 		// Conditions warrant a leaf node
-		if ( ( primitives.size() <= 2 ) || ( currentDepth >= BVHDEPTH ) )
+		if ( ( primitives.size() < 4 ) || ( currentDepth >= BVHDEPTH ) )
 		{
 			return;
 		}
@@ -163,10 +163,10 @@ struct BVHNode
 	// Based on PBRT book
 	void calculateSAH( vector<Primitive *> &leftPrims, vector<Primitive *> &rightPrims )
 	{
-		int longestAxis = bounds.LongestAxis();
 		// Not worth calculating over this small size
 		if ( primitives.size() <= BVH_MIN_SAH_COUNT )
 		{
+			int longestAxis = bounds.LongestAxis();
 			float center = bounds.Center( longestAxis );
 
 			for ( Primitive *p : primitives )
@@ -184,56 +184,71 @@ struct BVHNode
 		// Else we divide using the SAH with binning
 		else
 		{
-			// We simply pick the longest axis to perform the SAH on using binning
-			float axisLength = bounds.Extend( longestAxis );
+			float *bestSplit = new float[3];
+			float *bestCost = new float[3];
 
-			int cheapestBin = 0;
-			int prims;
-			float cheapestCost = FLT_MAX;
-			float bestSplit;
+			bestCost[0] = FLT_MAX;
+			bestCost[1] = FLT_MAX;
+			bestCost[2] = FLT_MAX;
 
-			// Calculate cost for each bin as splitplane
-			//#pragma omp parallel for
-			for ( int i = 0; i < BINCOUNT; i++ )
+			// Calculate best splitplanes across axes
+//#pragma omp parallel for
+			for ( int axis = 0; axis < 3; axis++ )
 			{
-				// left prim amount, right can be calculated by subtracting from total
-				int primsInSplit = 0;
-				aabb boundsLeft;
-				aabb boundsRight;
+				float axisLength = bounds.Extend( axis );
 
-				float splitPlane = bounds.Maximum( longestAxis ) - axisLength * ( i + 1 );
-
-				for ( Primitive *p : primitives )
+				// Calculate cost for each bin as splitplane
+				for ( int i = 0; i < BINCOUNT - 2; i++ )
 				{
-					if ( p->origin[longestAxis] < splitPlane )
-					{
-						primsInSplit++;
-						boundsLeft.Grow( p->volume() );
-					}
-					else
-					{
-						boundsRight.Grow( p->volume() );
-					}
-				}
+					// left prim amount, right can be calculated by subtracting from total
+					int primsLeft = 0;
+					int primsRight = 0;
+					aabb boundsLeft = aabb();
+					aabb boundsRight = aabb();
 
-				// Traversal cost omitted because it is the same for all splits anyway
-				float cost = ( primsInSplit * boundsLeft.Area() + ( primitives.size() - primsInSplit ) * boundsRight.Area() ) / bounds.Area();
+					float splitPlane = bounds.Minimum( axis ) + axisLength * ( ( i + 1 ) / float( BINCOUNT ) );
 
-				if ( cost < cheapestCost )
-				{
-					cheapestCost = cost;
-					cheapestBin = i;
-					bestSplit = splitPlane;
-					prims = primsInSplit;
+					for ( Primitive *p : primitives )
+					{
+						if ( p->origin[axis] < splitPlane )
+						{
+							primsLeft++;
+							boundsLeft.Grow( p->volume() );
+						}
+						else
+						{
+							primsRight++;
+							boundsRight.Grow( p->volume() );
+						}
+					}
+
+					// Traversal cost omitted because it is the same for all splits anyway
+					float cost = ( primsLeft * boundsLeft.Area() + primsRight * boundsRight.Area() ) / bounds.Area();
+
+					if ( cost < bestCost[axis] )
+					{
+						bestCost[axis] = cost;
+						bestSplit[axis] = splitPlane;
+					}
 				}
 			}
 
-			printf( "Cheapest Bin: %d\n\tprims: %d\n\tsplit plane: %d\n\n", cheapestBin, prims, bestSplit );
+			// Determine best axis
+			int bestAxis = 0;
+			for ( int i = 0; i < 3; i++ )
+			{
+				cout << bestCost[i] << endl;
+				if ( bestCost[i] < bestCost[bestAxis] )
+				{
+					bestAxis = i;
+				}
+			}
+
 
 			// We now have the best splitplane, divide primitives
 			for ( Primitive *p : primitives )
 			{
-				if ( p->origin[longestAxis] < bestSplit )
+				if ( p->origin[bestAxis] < bestSplit[bestAxis] )
 				{
 					leftPrims.push_back( p );
 				}
