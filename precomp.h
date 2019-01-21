@@ -11,16 +11,15 @@
 
 #define SCRWIDTH 512
 #define SCRHEIGHT 512
-#define TILESIZE 64
+#define TILESIZE 16
 
-#define BVH_DEBUG
-#define BVHDEPTH 64
-#define BVH_MIN_SAH_COUNT 4
-#define BINCOUNT 16 // this can also be reduced for faster construction
+#define BVHDEPTH 128
+#define BVH_MIN_SAH_COUNT 1024 * 64
+#define BINCOUNT 64 // this can also be reduced for faster construction
 
-#define MAXRAYDEPTH 4
-#define SAMPLES 4
-#define ITERATIONS 1024 * 16
+#define MAXRAYDEPTH 1
+#define SAMPLES 1
+#define ITERATIONS 1024 * 32
 
 #define SHADOWBIAS 0.001f
 #define REFLECTIONBIAS 0.001f

@@ -39,7 +39,7 @@ Renderer::~Renderer()
 	buffer = nullptr;
 }
 
-void Renderer::renderFrame()
+void Renderer::renderFrame( bool bvh_debug )
 {
 	if ( currentIteration < ITERATIONS )
 	{
@@ -55,7 +55,7 @@ void Renderer::renderFrame()
 				{
 					if ( ( x + dx ) < SCRWIDTH && ( y + dy ) < SCRHEIGHT )
 					{
-						prebuffer[( y + dy ) * SCRWIDTH + ( x + dx )] += shootRay( x + dx, y + dy, MAXRAYDEPTH );
+						prebuffer[( y + dy ) * SCRWIDTH + ( x + dx )] += shootRay( x + dx, y + dy, MAXRAYDEPTH, bvh_debug );
 					}
 				}
 			}
@@ -134,10 +134,10 @@ Pixel *Renderer::getOutput() const
 	return buffer;
 }
 
-vec3 Renderer::shootRay( unsigned x, unsigned y, unsigned depth ) const
+vec3 Renderer::shootRay( unsigned x, unsigned y, unsigned depth, bool bvh_debug ) const
 {
 	Ray r = cam.getRay( x, y );
-	return shootRay( r, depth );
+	return shootRay( r, depth, bvh_debug );
 }
 
 __inline void clampFloat( float &val, float lo, float hi )
@@ -206,13 +206,14 @@ vec3 calculateDiffuseRayDir( const vec3 &N, const vec3 &Nt, const vec3 &Nb )
 	return normalize( newdir );
 }
 
-vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
+vec3 Renderer::shootRay( const Ray &r, unsigned depth, bool bvh_debug ) const
 {
 	if ( depth > MAXRAYDEPTH ) return vec3( 0.f, 0.f, 0.f );
 
-#ifdef BVH_DEBUG
-	return bvh.debug( r );
-#endif
+	if ( bvh_debug )
+	{
+		return bvh.debug( r );
+	}
 
 	Hit closestHit = bvh.intersect( r );
 
@@ -235,7 +236,7 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 	diffray.origin = closestHit.coordinates + REFLECTIONBIAS * diffray.direction;
 
 	vec3 BRDF = closestHit.mat.albedo * ( 1 / PI );
-	vec3 Ei = shootRay( diffray, depth - 1 ) * dot( closestHit.normal, diffray.direction );
+	vec3 Ei = shootRay( diffray, depth - 1, bvh_debug ) * dot( closestHit.normal, diffray.direction );
 
 	return PI * 2.0f * BRDF * Ei;
 }

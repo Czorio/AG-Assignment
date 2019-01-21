@@ -9,20 +9,69 @@ int noLight;
 // -----------------------------------------------------------
 void Game::Init()
 {
-	Camera cam = Camera( vec3( 0.f, 0.f, -2.f ), vec3( 0.f, 0.f, 0.f ), vec3( 0.f, 1.f, 0.f ), PI / 4, ( (float)SCRWIDTH / (float)SCRHEIGHT ), 0.f, 0.5f, 1.f );
+	Camera cam = Camera( vec3( 0.f, -0.75f, -5.f ), vec3( 0.f, -0.75f, 0.f ), vec3( 0.f, 1.f, 0.f ), PI / 4, ( (float)SCRWIDTH / (float)SCRHEIGHT ), 0.f, 0.5f, 1.f );
 
-	Material mat;
-	mat.type = MaterialType::LAMBERTIAN_MAT;
-	mat.albedo = vec3( 0.25f, 0.25f, 0.75f );
-	mat.emission = vec3( 0.f, 0.f, 0.f );
+	Material monkeyMat;
+	monkeyMat.type = MaterialType::LAMBERTIAN_MAT;
+	monkeyMat.albedo = vec3( 0.25f, 0.25f, 0.25f );
 
-	vector<Primitive *> scene = loadOBJ( "assets/Monkey.obj", mat );
+	Material eyesRedMat;
+	eyesRedMat.type = MaterialType::EMIT_MAT;
+	eyesRedMat.albedo = vec3( 1.f, 0.f, 0.f );
+	eyesRedMat.emission = eyesRedMat.albedo * 100.f;
+
+	Material eyesGreenMat;
+	eyesGreenMat.type = MaterialType::EMIT_MAT;
+	eyesGreenMat.albedo = vec3( 0.f, 1.f, 0.f );
+	eyesGreenMat.emission = eyesGreenMat.albedo * 100.f;
+
+	Material eyesBlueMat;
+	eyesBlueMat.type = MaterialType::EMIT_MAT;
+	eyesBlueMat.albedo = vec3( 0.f, 0.f, 1.f );
+	eyesBlueMat.emission = eyesBlueMat.albedo * 100.f;
+
+	Material personMat;
+	personMat.type = MaterialType::LAMBERTIAN_MAT;
+	personMat.albedo = vec3( 0.95f, 0.95f, 0.95f );
+
+	Material cillinderMat;
+	cillinderMat.type = MaterialType::LAMBERTIAN_MAT;
+	cillinderMat.albedo = vec3( 0.95f, 0.95f, 0.95f );
+
+	vector<Primitive *> monkeys = loadOBJ( "assets/final/Monkeys.obj", monkeyMat );
+	vector<Primitive *> cillinder = loadOBJ( "assets/final/Cillinder.obj", cillinderMat );
+	vector<Primitive *> redEyes = loadOBJ( "assets/final/MonkeyEyesRed.obj", eyesRedMat );
+	vector<Primitive *> blueEyes = loadOBJ( "assets/final/MonkeyEyesGreen.obj", eyesGreenMat );
+	vector<Primitive *> greenEyes = loadOBJ( "assets/final/MonkeyEyesBlue.obj", eyesBlueMat );
+	vector<Primitive *> person = loadOBJ( "assets/final/Person.obj", personMat );
+
+	monkeys.insert( monkeys.end(), cillinder.begin(), cillinder.end() );
+	monkeys.insert( monkeys.end(), redEyes.begin(), redEyes.end() );
+	monkeys.insert( monkeys.end(), blueEyes.begin(), blueEyes.end() );
+	monkeys.insert( monkeys.end(), greenEyes.begin(), greenEyes.end() );
+	monkeys.insert( monkeys.end(), person.begin(), person.end() );
+
+	vector<Primitive *> scene;
+	scene.insert( scene.end(), cillinder.begin(), cillinder.end() );
+	scene.insert( scene.end(), person.begin(), person.end() );
+
+	Material basePlaneMat;
+	basePlaneMat.type = MaterialType::LAMBERTIAN_MAT;
+	basePlaneMat.albedo = vec3( 0.5f, 0.5f, 0.5f );
+	monkeys.push_back( new Sphere( vec3( 0.f, 2500.f, 0.f ), 2500.f, basePlaneMat ) );
+	//scene.push_back( new Sphere( vec3( 0.f, 2500.f, 0.f ), 2500.f, basePlaneMat ) );
+
+	Material overheadLightMat;
+	overheadLightMat.type = MaterialType::EMIT_MAT;
+	overheadLightMat.albedo = vec3( 1.f, 1.f, 1.f );
+	overheadLightMat.emission = overheadLightMat.albedo * 10.f;
+	monkeys.push_back( new Sphere( vec3( 0.f, -3.f, 0.f ), 1.f, overheadLightMat) );
+	scene.push_back( new Sphere( vec3( 0.f, -3.f, 0.f ), 1.f, overheadLightMat ) );
 
 	renderer = new Renderer( scene );
-	noPrim = scene.size();
-	noLight = 1; // lights.size();
+	noPrim = monkeys.size();
+	noLight = 6;
 	renderer->setCamera( cam );
-	// renderer->setLights( lights );
 }
 
 // -----------------------------------------------------------
@@ -34,6 +83,7 @@ void Game::Shutdown()
 }
 
 bool showHelp = false;
+bool BVH_DEBUG = true;
 
 bool moveLeft = false;
 bool moveRight = false;
@@ -151,7 +201,7 @@ void Game::Tick( float deltaTime )
 
 	// Render the frame
 	timer t = timer();
-	renderer->renderFrame();
+	renderer->renderFrame( BVH_DEBUG );
 	float elapsed = t.elapsed();
 	float fps = 1 / ( elapsed / 1000 );
 
@@ -179,6 +229,7 @@ void Game::Tick( float deltaTime )
 		screen->Print( "G - Zoom out\n", 2, 98, 0xFFFFFF );
 		screen->Print( "Z - Aperture increase\n", 2, 106, 0xFFFFFF );
 		screen->Print( "X - Aperture decrease\n", 2, 114, 0xFFFFFF );
+		screen->Print( "B - Show BVH\n", 2, 122, 0xFFFFFF );
 		screen->Print( "X", SCRWIDTH / 2, SCRHEIGHT / 2, 0xFFFFFF );
 		screen->Print( ( "Aperture: " + to_string( renderer->getCamera()->aperture ) ).c_str(), 2, SCRHEIGHT - 24, 0xFFFFFF );
 		screen->Print( ( "Focal Length: " + to_string( renderer->getCamera()->focalLength ) ).c_str(), 2, SCRHEIGHT - 16, 0xFFFFFF );
@@ -277,6 +328,10 @@ void Tmpl8::Game::KeyDown( int key )
 		break;
 	case SDL_SCANCODE_H:
 		showHelp = !showHelp;
+		break;
+	case SDL_SCANCODE_B:
+		renderer->invalidatePrebuffer();
+		BVH_DEBUG = !BVH_DEBUG;
 		break;
 	case SDL_SCANCODE_LEFT:
 		rotLeft = true;
