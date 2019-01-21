@@ -31,7 +31,7 @@ struct BVHNode
 
 		vector<Primitive *> leftPrims, rightPrims;
 
-		calculateSAH( leftPrims, rightPrims );
+		calculateSAHOld( leftPrims, rightPrims );
 
 		left = new BVHNode( leftPrims );
 		left->subdivide( currentDepth + 1 );
@@ -162,9 +162,93 @@ struct BVHNode
 		return tmax > tmin && tmax > 0.0;
 	}
 
+	void calculateSAHOld( vector<Primitive *> &bestLeftPrims, vector<Primitive *> &bestRightPrims )
+	{
+		float side1 = bounds.Extend( 0 );
+		float side2 = bounds.Extend( 1 );
+		float side3 = bounds.Extend( 2 );
+
+		// Calculate the cost of the head
+		float splitCost = FLT_MAX;
+		float minCost = primitives.size() * ( side1 * side2 + side2 * side3 + side3 * side1 );
+		float split;
+		float surfaceLeft, surfaceRight;
+		BVHNode *temp_left, *temp_right;
+		vector<Primitive *> primsLeft, primsRight;
+
+		// Loop over the three axis
+		for ( int axis = 0; axis < 3; axis++ )
+		{
+			// Loop over all possible splits (primitive centroids)
+			for ( int bin = 1; bin < BINCOUNT; bin++ )
+			{
+				split = bounds.bmin[axis] + bounds.Extend( axis ) * bin / BINCOUNT;
+				primsLeft.clear();
+				primsRight.clear();
+
+				// Count number of primitives in left and right nodes
+				for ( Primitive *prim : primitives )
+				{
+					if ( prim->origin[axis] <= split )
+					{
+						primsLeft.push_back( prim );
+					}
+					else
+					{
+						primsRight.push_back( prim );
+					}
+				}
+
+				int countLeft = primsLeft.size();
+				int countRight = primsRight.size();
+
+				// Avoid useless partionings - need to check
+				// if ( countLeft <= 1 || countRight <= 1 ) continue;
+
+				// Update children
+				temp_left = new BVHNode( primsLeft );
+				temp_right = new BVHNode( primsRight );
+
+				// Calculate sides of the left and right bounding boxes
+				float lside1 = temp_left->bounds.Extend( 0 );
+				float lside2 = temp_left->bounds.Extend( 1 );
+				float lside3 = temp_left->bounds.Extend( 2 );
+
+				float rside1 = temp_right->bounds.Extend( 0 );
+				float rside2 = temp_right->bounds.Extend( 1 );
+				float rside3 = temp_right->bounds.Extend( 2 );
+
+				// Deallocate memory
+				delete temp_left, temp_right;
+				temp_left = nullptr;
+				temp_right = nullptr;
+
+				// Calculate surface area of left and right boxes
+				float surfaceLeft = lside1 * lside2 + lside2 * lside3 + lside3 * lside1;
+				float surfaceRight = rside1 * rside2 + rside2 * rside3 + rside3 * rside1;
+
+				// Calculate cost of split
+				splitCost = surfaceLeft * countLeft + surfaceRight * countRight;
+
+				// Is this split better than the current minimum?
+				if ( splitCost < minCost )
+				{
+					minCost = splitCost;
+					bestLeftPrims.clear();
+					bestLeftPrims = primsLeft;
+					bestRightPrims.clear();
+					bestRightPrims = primsRight;
+				}
+			}
+		}
+	}
+
 	// Based on PBRT book
 	void calculateSAH( vector<Primitive *> &leftPrims, vector<Primitive *> &rightPrims )
 	{
+		leftPrims.clear();
+		rightPrims.clear();
+
 		// Not worth calculating over this small size
 		if ( primitives.size() <= BVH_MIN_SAH_COUNT )
 		{

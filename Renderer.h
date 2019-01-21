@@ -28,11 +28,15 @@ class Renderer
 
 	unsigned currentIteration;
 	vec3 *prebuffer;
+	float *depthbuffer;
+	vec3 *postbuffer;
 	Pixel *buffer;
 	bool *boolbuffer; // TEST
 
+	float *kernel;
+
 	vec3 shootRay( unsigned x, unsigned y, unsigned depth, bool bvh_debug ) const;
-	vec3 shootRay( const Ray &r, unsigned depth, bool bvh_debug ) const;
+	vec3 shootRay( const unsigned x, const unsigned y, const Ray &r, unsigned depth, bool bvh_debug ) const;
 
 	// rgb to Pixel
 	Pixel rgb( float r, float g, float b ) const;

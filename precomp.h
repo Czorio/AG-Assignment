@@ -14,17 +14,19 @@
 #define TILESIZE 16
 
 #define BVHDEPTH 128
-#define BVH_MIN_SAH_COUNT 1024 * 64
+#define BVH_MIN_SAH_COUNT 8
 #define BINCOUNT 64 // this can also be reduced for faster construction
 
-#define MAXRAYDEPTH 1
-#define SAMPLES 1
+#define MAXRAYDEPTH 4
+#define SAMPLES 2
 #define ITERATIONS 1024 * 32
 
 #define SHADOWBIAS 0.001f
 #define REFLECTIONBIAS 0.001f
 #define REFRACTIONBIAS 0.001f
 #define EPSILON 0.0001f
+
+#define FILTERBIAS 0.1f
 
 #define AMBIENTLIGHT 0.f
 
@@ -96,6 +98,7 @@ using namespace Tmpl8;
 #include "Primitive.h"
 #include "OBJLoader.h"
 #include "BVH.h"
+#include "Filter.h"
 #include "Renderer.h"
 
 #include "game.h"
