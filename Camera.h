@@ -33,9 +33,16 @@ class Camera
 	{
 		Ray r;
 
-		// Randomize origin for DoF
-		vec3 randVec = rotateVec( up, forward, Rand( 2 * PI ) );
-		r.origin = origin + randVec * Rand( aperture );
+		if ( aperture != 0.f )
+		{
+			// Randomize origin for DoF
+			vec3 randVec = rotateVec( up, forward, Rand( 2 * PI ) );
+			r.origin = origin + randVec * Rand( aperture );
+		}
+		else
+		{
+			r.origin = origin;
+		}
 
 		// Add some AA
 		float norm_x = ( ( float( x ) + ( -1.f + Rand( 1.f ) ) ) / float( SCRWIDTH ) ) - 0.5f;

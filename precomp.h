@@ -7,28 +7,28 @@
 // Prevent expansion clashes (when using std::min and std::max):
 #define NOMINMAX
 
-#define MAX_IDLE_FPS 60.f
+constexpr float MAX_IDLE_FPS = 60.f;
 
-#define SCRWIDTH 512
-#define SCRHEIGHT 512
-#define TILESIZE 16
+constexpr auto SCRWIDTH = 1024;
+constexpr auto SCRHEIGHT = 1024;
+constexpr auto TILESIZE = 32;
 
-#define BVHDEPTH 128
-#define BVH_MIN_SAH_COUNT 8
-#define BINCOUNT 64 // this can also be reduced for faster construction
+constexpr auto BVHDEPTH = 128;
+constexpr auto BVH_MIN_SAH_COUNT = 8;
+constexpr auto BINCOUNT = 64; // this can also be reduced for faster construction
 
-#define MAXRAYDEPTH 4
-#define SAMPLES 2
-#define ITERATIONS 1024 * 32
+constexpr auto MAXRAYDEPTH = 4;
+constexpr auto SAMPLES = 2;
+constexpr auto ITERATIONS = 1024 * 32;
 
-#define SHADOWBIAS 0.001f
-#define REFLECTIONBIAS 0.001f
-#define REFRACTIONBIAS 0.001f
-#define EPSILON 0.0001f
+constexpr auto SHADOWBIAS = 0.001f;
+constexpr auto REFLECTIONBIAS = 0.001f;
+constexpr auto REFRACTIONBIAS = 0.001f;
+constexpr auto EPSILON = 0.0001f;
 
-#define FILTERBIAS 0.1f
+constexpr auto FILTERBIAS = 1.f;
 
-#define AMBIENTLIGHT 0.f
+constexpr auto AMBIENTLIGHT = 0.f;
 
 // #define FULLSCREEN
 // #define ADVANCEDGL	// faster if your system supports it

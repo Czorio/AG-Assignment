@@ -42,8 +42,8 @@ void Game::Init()
 	vector<Primitive *> monkeys = loadOBJ( "assets/final/Monkeys.obj", monkeyMat );
 	vector<Primitive *> cillinder = loadOBJ( "assets/final/Cillinder.obj", cillinderMat );
 	vector<Primitive *> redEyes = loadOBJ( "assets/final/MonkeyEyesRed.obj", eyesRedMat );
-	vector<Primitive *> blueEyes = loadOBJ( "assets/final/MonkeyEyesGreen.obj", eyesGreenMat );
-	vector<Primitive *> greenEyes = loadOBJ( "assets/final/MonkeyEyesBlue.obj", eyesBlueMat );
+	vector<Primitive *> blueEyes = loadOBJ( "assets/final/MonkeyEyesGreen.obj", eyesBlueMat );
+	vector<Primitive *> greenEyes = loadOBJ( "assets/final/MonkeyEyesBlue.obj", eyesGreenMat );
 	vector<Primitive *> person = loadOBJ( "assets/final/Person.obj", personMat );
 
 	monkeys.insert( monkeys.end(), cillinder.begin(), cillinder.end() );

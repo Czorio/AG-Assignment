@@ -17,17 +17,17 @@ Renderer::Renderer( vector<Primitive *> primitives ) : bvh( BVH( primitives ) )
 
 	kernel = new float[3 * 3];
 
-	kernel[0] = 1.f / 16.f;
-	kernel[1] = 1.f / 8.f;
-	kernel[2] = 1.f / 16.f;
+	kernel[0] = 1.f / 9.f;
+	kernel[1] = 1.f / 9.f;
+	kernel[2] = 1.f / 9.f;
 
-	kernel[3] = 1.f / 8.f;
-	kernel[4] = 1.f / 4.f;
-	kernel[5] = 1.f / 8.f;
+	kernel[3] = 1.f / 9.f;
+	kernel[4] = 1.f / 9.f;
+	kernel[5] = 1.f / 9.f;
 
-	kernel[6] = 1.f / 16.f;
-	kernel[7] = 1.f / 8.f;
-	kernel[8] = 1.f / 16.f;
+	kernel[6] = 1.f / 9.f;
+	kernel[7] = 1.f / 9.f;
+	kernel[8] = 1.f / 9.f;
 
 	buffer = new Pixel[SCRWIDTH * SCRHEIGHT];
 
