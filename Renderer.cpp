@@ -17,17 +17,17 @@ Renderer::Renderer( vector<Primitive *> primitives ) : bvh( BVH( primitives ) )
 
 	kernel = new float[3 * 3];
 
-	kernel[0] = 1.f / 9.f;
-	kernel[1] = 1.f / 9.f;
-	kernel[2] = 1.f / 9.f;
+	kernel[0] = 1.f / 16.f;
+	kernel[1] = 1.f / 8.f;
+	kernel[2] = 1.f / 16.f;
 
-	kernel[3] = 1.f / 9.f;
-	kernel[4] = 1.f / 9.f;
-	kernel[5] = 1.f / 9.f;
+	kernel[3] = 1.f / 8.f;
+	kernel[4] = 1.f / 4.f;
+	kernel[5] = 1.f / 8.f;
 
-	kernel[6] = 1.f / 9.f;
-	kernel[7] = 1.f / 9.f;
-	kernel[8] = 1.f / 9.f;
+	kernel[6] = 1.f / 16.f;
+	kernel[7] = 1.f / 8.f;
+	kernel[8] = 1.f / 16.f;
 
 	buffer = new Pixel[SCRWIDTH * SCRHEIGHT];
 
@@ -145,8 +145,8 @@ Pixel *Renderer::getOutput() const
 {
 	// currentSample - 1 because it is increased in the renderFrame() function in preparation of the next frame.
 	// Unfortunately, we are getting the current frame, so we get currentSample - 1.
-	float importance = 1.f / float( currentIteration - 1 );
-
+	float average = 1.f / float( currentIteration - 1 );
+	/*
 #pragma omp parallel for
 	for ( int y = 0; y < SCRHEIGHT; y++ )
 	{
@@ -176,10 +176,10 @@ Pixel *Renderer::getOutput() const
 			postbuffer[y * SCRHEIGHT + x] = value;
 		}
 	}
-
+	*/
 	for ( unsigned i = 0; i < SCRWIDTH * SCRHEIGHT; i++ )
 	{
-		buffer[i] = rgb( gammaCorrect( postbuffer[i] ) );
+		buffer[i] = rgb( gammaCorrect( prebuffer[i] * average ) );
 	}
 
 	return buffer;
@@ -277,7 +277,7 @@ vec3 Renderer::shootRay( const unsigned x, const unsigned y, const Ray &r, unsig
 	// No hit
 	if ( closestHit.t == FLT_MAX )
 	{
-		return vec3( 0.f, 0.f, 0.f );
+		return vec3( AMBIENTLIGHT );
 	}
 
 	// Closest hit is light source

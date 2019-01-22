@@ -17,27 +17,26 @@ void Game::Init()
 
 	Material eyesRedMat;
 	eyesRedMat.type = MaterialType::EMIT_MAT;
-	eyesRedMat.albedo = vec3( 1.f, 0.05f, 0.05f );
-	eyesRedMat.emission = eyesRedMat.albedo * 10.f;
+	eyesRedMat.albedo = vec3( 1.f, 0.25f, 0.25f );
+	eyesRedMat.emission = eyesRedMat.albedo * 100.f;
 
 	Material eyesGreenMat;
 	eyesGreenMat.type = MaterialType::EMIT_MAT;
-	eyesGreenMat.albedo = vec3( 0.05f, 1.f, 0.05f );
-	eyesGreenMat.emission = eyesGreenMat.albedo * 10.f;
+	eyesGreenMat.albedo = vec3( 0.25f, 1.f, 0.25f );
+	eyesGreenMat.emission = eyesGreenMat.albedo * 100.f;
 
 	Material eyesBlueMat;
 	eyesBlueMat.type = MaterialType::EMIT_MAT;
-	eyesBlueMat.albedo = vec3( 0.05f, 0.05f, 1.f );
-	eyesBlueMat.emission = eyesBlueMat.albedo * 10.f;
+	eyesBlueMat.albedo = vec3( 0.25f, 0.25f, 1.f );
+	eyesBlueMat.emission = eyesBlueMat.albedo * 100.f;
 
 	Material personMat;
 	personMat.type = MaterialType::LAMBERTIAN_MAT;
 	personMat.albedo = vec3( 0.95f, 0.95f, 0.95f );
 
 	Material cillinderMat;
-	cillinderMat.type = MaterialType::EMIT_MAT;
+	cillinderMat.type = MaterialType::LAMBERTIAN_MAT;
 	cillinderMat.albedo = vec3( 0.95f, 0.95f, 0.95f );
-	cillinderMat.emission = cillinderMat.albedo * 0.25f;
 
 	vector<Primitive *> monkeys = loadOBJ( "assets/final/Monkeys.obj", monkeyMat );
 	vector<Primitive *> cillinder = loadOBJ( "assets/final/Cillinder.obj", cillinderMat );
@@ -65,8 +64,8 @@ void Game::Init()
 	Material overheadLightMat;
 	overheadLightMat.type = MaterialType::EMIT_MAT;
 	overheadLightMat.albedo = vec3( 1.f, 1.f, 1.f );
-	overheadLightMat.emission = overheadLightMat.albedo * 10.f;
-	monkeys.push_back( new Sphere( vec3( 0.f, -6.f, 0.f ), 1.f, overheadLightMat) );
+	overheadLightMat.emission = overheadLightMat.albedo * 1.f;
+	//monkeys.push_back( new Sphere( vec3( 0.f, -105.f, 0.f ), 100.f, overheadLightMat) );
 	scene.push_back( new Sphere( vec3( 0.f, -6.f, 0.f ), 1.f, overheadLightMat ) );
 
 	renderer = new Renderer( monkeys );

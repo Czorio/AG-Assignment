@@ -9,8 +9,8 @@
 
 constexpr float MAX_IDLE_FPS = 60.f;
 
-constexpr auto SCRWIDTH = 1024;
-constexpr auto SCRHEIGHT = 1024;
+constexpr auto SCRWIDTH = 512;
+constexpr auto SCRHEIGHT = 512;
 constexpr auto TILESIZE = 32;
 
 constexpr auto BVHDEPTH = 128;
@@ -22,11 +22,11 @@ constexpr auto SAMPLES = 2;
 constexpr auto ITERATIONS = 1024 * 32;
 
 constexpr auto SHADOWBIAS = 0.001f;
-constexpr auto REFLECTIONBIAS = 0.001f;
+constexpr auto REFLECTIONBIAS = 0.01f;
 constexpr auto REFRACTIONBIAS = 0.001f;
 constexpr auto EPSILON = 0.0001f;
 
-constexpr auto FILTERBIAS = 1.f;
+constexpr auto FILTERBIAS = 0.5f;
 
 constexpr auto AMBIENTLIGHT = 0.f;
 
