@@ -185,7 +185,7 @@ vec3 getPointOnHemi()
 	float r2 = uniform_dist( mt );
 
 #ifdef IMPORTANCE_SAMPLING
-	vec3 point = Sample::cosineSampleHemisphere( r1, r2 ); // Does not work as expected!
+	vec3 point = Sample::cosineSampleHemisphere( r1, r2 );
 #else
 	vec3 point = Sample::uniformSampleHemisphere( r1, r2 );
 #endif
@@ -202,6 +202,11 @@ vec3 calculateDiffuseRayDir( const vec3 &N, const vec3 &Nt, const vec3 &Nb )
 
 	// Transform point vector to the local coordinate system of the hit point
 	// https://www.scratchapixel.com/lessons/3d-basic-rendering/global-illumination-path-tracing/global-illumination-path-tracing-practical-implementation
+	//vec3 newdir(
+	//	pointOnHemi.x * Nb.x + pointOnHemi.y * N.x + pointOnHemi.z * Nt.x,
+	//	pointOnHemi.x * Nb.y + pointOnHemi.y * N.y + pointOnHemi.z * Nt.y,
+	//	pointOnHemi.x * Nb.z + pointOnHemi.y * N.z + pointOnHemi.z * Nt.z );
+
 	vec3 newdir(
 		pointOnHemi.x * Nb.x + pointOnHemi.y * N.x + pointOnHemi.z * Nt.x,
 		pointOnHemi.x * Nb.y + pointOnHemi.y * N.y + pointOnHemi.z * Nt.y,
@@ -214,9 +219,9 @@ vec3 calculateDiffuseRayDir( const vec3 &N, const vec3 &Nt, const vec3 &Nb )
 void Renderer::randomPointOnLight( const vec3 &sensorPoint, vec3 &randomPoint, float &randomLightArea, vec3 &lightNormal ) const
 {
 	int randomLight = (int)Rand(lightIndices.size());
-	// CHECK: DOES THE NEXT ONE WORK AS EXPECTED?
 	randomPoint = primitives[randomLight]->getRandomSurfacePoint( sensorPoint );
-	randomLightArea = primitives[randomLight]->getArea();
+	const float &d = ( randomPoint - sensorPoint ).length();
+	randomLightArea = primitives[randomLight]->getArea(d);
 	lightNormal = primitives[randomLight]->getNormal(randomPoint);
 }
 
@@ -241,8 +246,11 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 		case RayType::INDIRECT_RAY:
 			return vec3( 0.f, 0.f, 0.f );
 			break;
-		default:
+		case RayType::LIGHT_RAY:
 			return closestHit.mat.emission;
+			break;
+		default:
+			return closestHit.mat.albedo;
 			break;
 		}
 	}
@@ -251,11 +259,73 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 	// Currently: does not work for mirrors!
 	if ( closestHit.mat.type != EMIT_MAT && r.type == RayType::LIGHT_RAY )
 		return vec3( 0.f, 0.f, 0.f );
-
+	
 	// Create the local coordinate system of the hit point
 	vec3 Nt, Nb;
 	Sample::createLocalCoordinateSystem( closestHit.normal, Nt, Nb );
 
+	// Calculate random diffused ray (cosine weighted or uniform depending if "I.S." on)
+	Ray diffray;
+	diffray.origin = closestHit.coordinates + REFLECTIONBIAS * diffray.direction;
+	diffray.direction = calculateDiffuseRayDir( closestHit.normal, Nt, Nb );
+	diffray.type = RayType::INDIRECT_RAY;
+
+	// N*R dot product, Slide 47 Lecture "Variance reduction"
+	float dpro = dot( closestHit.normal, diffray.direction );
+	if ( dpro < 0 )
+	{
+		// This normally should not happen
+		std::cout << "dpro < 0 " << std::endl;
+		return vec3( 0.f, 0.f, 0.f );
+	}
+
+#ifdef IMPORTANCE_SAMPLING
+	// Importance sampling (slide 47- lecture 8,9)
+	vec3 PDF = dpro / PI;
+#else
+	vec3 PDF = 1 / ( 2.0f * PI );
+#endif
+
+	// Update light accumulutation
+	vec3 BRDF = closestHit.mat.albedo * ( 1 / PI );
+
+
+	vec3 Ei = shootRay( diffray, depth + 1 ) * dpro;
+	// No / operator !
+	// Dont divide with zero ! - Put the following in some function ???
+	if ( PDF.x > 0 )
+		PDF.x = std::max( EPSILON, PDF.x );
+	else
+	{
+		std::cout << "Negative PDF" << std::endl;
+		return vec3( 0.f, 0.f, 0.f );
+		//PDF.x = std::min( -EPSILON, PDF.x );
+	}
+
+	if ( PDF.y > 0 )
+		PDF.y = std::max( EPSILON, PDF.y );
+	else
+	{
+		std::cout << "Negative PDF" << std::endl;
+		return vec3( 0.f, 0.f, 0.f );
+		//PDF.y = std::min( -EPSILON, PDF.y );
+	}
+
+
+	if ( PDF.z > 0 )
+		PDF.z = std::max( EPSILON, PDF.z );
+	else
+	{
+		std::cout << "Negative PDF" << std::endl;
+		return vec3( 0.f, 0.f, 0.f );
+		//PDF.z = std::min( -EPSILON, PDF.z );
+	}
+
+	Ei.x = Ei.x / PDF.x;
+	Ei.y = Ei.y / PDF.y;
+	Ei.z = Ei.z / PDF.z;
+
+	// Direct illumination calculations
 	// Calculate direct ray (aiming to a random light)
 	float randomLightArea;
 	vec3 randomPoint;
@@ -266,58 +336,24 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 	vec3 L = randomPoint - closestHit.coordinates;
 	float distance = L.length();
 	L = normalize( L );
-	float cos_o = dot( -L, lightNormal ); // CHECK
-	float cos_i = dot( L, closestHit.normal ); // CHECK
+
+	// The following are the visibility factor
+	float cos_o = dot( -L, lightNormal );	  // --> checks for light-ray intersection
+	float cos_i = dot( L, closestHit.normal ); // --> checks for primitive-ray intersection
 	if ( ( cos_o <= 0 ) || ( cos_i <= 0 ) )
 		return vec3( 0.f, 0.f, 0.f );
 
+	// Slide 26 ("Variance reduction")
 	// Shoot the direct ray (light ray)
 	Ray directRay;
 	directRay.direction = L;
-	directRay.origin = closestHit.coordinates;
+	directRay.origin = closestHit.coordinates + REFLECTIONBIAS * directRay.direction;
 	directRay.type = RayType::LIGHT_RAY;
 	vec3 Ld = shootRay( directRay, 0 ); // no splitting for light rays, depth=0 
 
-	// Calculate random diffused ray (cosine weighted or uniform depending if "I.S." on)
-	Ray diffray;
-	diffray.origin = closestHit.coordinates + REFLECTIONBIAS * diffray.direction;
-	diffray.direction = calculateDiffuseRayDir( closestHit.normal, Nt, Nb );
-
-#ifdef IMPORTANCE_SAMPLING // Still does not work !
-	// Importance sampling (slide 47- lecture 8,9)
-	vec3 PDF = dot( closestHit.normal, diffray.direction ) / PI;
-#else
-	vec3 PDF = 1 / ( 2 * PI );
-#endif
-
-	// Update light accumulutation
-	vec3 BRDF = closestHit.mat.albedo * ( 1 / PI );
-	vec3 Ei = shootRay( diffray, depth - 1 ) * dot( closestHit.normal, diffray.direction );
-	// No / operator !
-	// Dont divide with zero ! - Put the following in some function ???
-	if ( PDF.x > 0 )
-		PDF.x = std::max( EPSILON, PDF.x );
-	else
-		PDF.x = std::min( -EPSILON, PDF.x );
-
-	if ( PDF.y > 0 )
-		PDF.y = std::max( EPSILON, PDF.y );
-	else
-		PDF.y = std::min( -EPSILON, PDF.y );
-
-	if ( PDF.z > 0 )
-		PDF.z = std::max( EPSILON, PDF.z );
-	else
-		PDF.z = std::min( -EPSILON, PDF.z );
-
-	Ei.x = Ei.x / PDF.x;
-	Ei.y = Ei.y / PDF.y;
-	Ei.z = Ei.z / PDF.z;
-
-	// Direct illumination calculations
-	// Slide 26 ("Variance reduction") -- LIGHT COLOR??
 	float solidAngle = ( cos_o * randomLightArea ) / ( distance * distance );
 	Ld = Ld * solidAngle * BRDF * cos_i;
+
 
 	return BRDF * Ei + Ld;
 }

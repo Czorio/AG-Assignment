@@ -16,7 +16,7 @@ struct Primitive
 	virtual Hit hit( const Ray &ray ) const = 0;
 	virtual aabb volume() const = 0;
 	virtual vec3 getRandomSurfacePoint( const vec3 &sensorPoint ) const = 0; // NEE, to sample point on light
-	virtual float getArea() const = 0; // NEE, to sample point on light
+	virtual float getArea( const float &d ) const = 0;						 // NEE, to sample point on light
 	virtual vec3 getNormal( const vec3 &pointOnSurface ) const = 0;
 };
 
@@ -143,7 +143,11 @@ struct Sphere : public Primitive
 	vec3 getRandomSurfacePoint( const vec3 &sensorPoint ) const override
 	{
 		// Get a random point on hemisphere with unit radius
+#ifdef IMPORTANCE_SAMPLING
+		vec3 unitPoint = Sample::cosineSampleHemisphere( Rand( 1 ), Rand( 1 ) ); // care with the randoms here
+#else
 		vec3 unitPoint = Sample::uniformSampleHemisphere( Rand( 1 ), Rand( 1 ) ); // care with the randoms here
+#endif
 
 		// Transform the point to be on the surface part that is visible by the sensor point
 		// N connects the origin of the sphere and the point we do the calculations for (sensor)
@@ -163,10 +167,11 @@ struct Sphere : public Primitive
 		return surfacePoint;
 	}
 
-	float getArea() const override
+	float getArea( const float &d ) const override
 	{
-		// Visible area of sphere from any point is a circe, r2 = radius * radius
-		return PI * r2;
+		// Visible area of sphere from any point (r2 = radius*radius)
+		// Source: https://math.stackexchange.com/questions/1329130/what-fraction-of-a-sphere-can-an-external-observer-see
+		return 2 * PI * r2 * d / (radius + d);
 	}
 
 	vec3 getNormal(const vec3 &pointOnSurface) const override
@@ -334,7 +339,7 @@ struct Triangle : public Primitive
 		return vec3( 0.f, 0.f, 0.f );
 	}
 
-	float getArea() const override // Next event estimation
+	float getArea( const float &d ) const override // Next event estimation
 	{
 		return 0;
 	}
