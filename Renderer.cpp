@@ -26,11 +26,10 @@ Renderer::Renderer( vector<Primitive *> primitives ) : bvh( BVH( primitives ) )
 
 	// Create a vector with the primitives that are light sources
 	// Handy for the Next Event Estimation
-	uint count = 0;
-	for ( auto prim : primitives )
+	for (int i = 0; i < primitives.size(); i++)
 	{
-		if ( prim->mat.type == EMIT_MAT )
-			lightIndices.push_back( count++ );
+		if ( primitives[i]->mat.type == EMIT_MAT )
+			lightIndices.push_back( i );
 	}
 }
 
@@ -272,13 +271,12 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 	float distance = L.length();
 	L = normalize( L );
 
-	// The following are the visibility factor
-	float cos_o = dot( -L, lightNormal );	  // --> checks for light-ray intersection
-	float cos_i = dot( L, closestHit.normal ); // --> checks for primitive-ray intersection
-	//if ( ( cos_o <= 0 ) || ( cos_i <= 0 ) )
-	//	return vec3( 0.f, 0.f, 0.f );
-	cos_o = std::max( 0.f, cos_o );
-	cos_i = std::max( 0.f, cos_i );
+	// The following act as the visibility factor
+	float cos_o = dot( -L, lightNormal );	  
+	float cos_i = dot( L, closestHit.normal ); 
+
+	cos_o = std::max( 0.f, cos_o ); // --> checks for light-ray intersection
+	cos_i = std::max( 0.f, cos_i ); // --> checks for primitive-ray intersection
 
 
 	// Slide 26 ("Variance reduction")
@@ -287,7 +285,13 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 	directRay.direction = L;
 	directRay.origin = closestHit.coordinates + REFLECTIONBIAS * directRay.direction;
 	directRay.type = RayType::LIGHT_RAY;
-	vec3 Ld = shootRay( directRay, 0 ); // no splitting for light rays, depth=0 
+	vec3 Ld( 0.f, 0.f, 0.f );
+	
+	// Using if can save some computations since if one of the two is zero the result is zero
+	// (had 0.3fps improvement with this if)
+	if ( ( cos_i > 0 ) && ( cos_o > 0 ) )
+		Ld = shootRay( directRay, 0 ); // no splitting for light rays, depth=0
+
 
 	// Calculate random diffused ray (cosine weighted or uniform depending if "I.S." on)
 	Ray diffray;
@@ -298,13 +302,6 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 	// N*R dot product, Slide 47 Lecture "Variance reduction"
 	float dpro = dot( closestHit.normal, diffray.direction );
 
-	if ( dpro < 0 )
-	{
-		// This normally should not happen
-		std::cout << "dpro < 0 " << std::endl;
-		return vec3( 0.f, 0.f, 0.f );
-	}
-
 #ifdef IMPORTANCE_SAMPLING
 	// Importance sampling (slide 47- lecture 8,9)
 	vec3 PDF = dpro / PI;
@@ -314,46 +311,20 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 
 	// Update light accumulutation
 	vec3 BRDF = closestHit.mat.albedo * ( 1 / PI );
-	vec3 Ei = shootRay( diffray, depth + 1 ) * dpro;
 
-	// No / operator !
-	// Dont divide with zero ! - Put the following in some function ???
-	if ( PDF.x > 0 )
-		PDF.x = std::max( EPSILON, PDF.x );
-	else
+	vec3 Ei( 0.f, 0.f, 0.f );
+	if (dpro > EPSILON)
 	{
-		std::cout << "Negative PDF" << std::endl;
-		return vec3( 0.f, 0.f, 0.f );
-		//PDF.x = std::min( -EPSILON, PDF.x );
+		Ei = shootRay( diffray, depth + 1 ) * dpro;
+
+		Ei.x = Ei.x / PDF.x;
+		Ei.y = Ei.y / PDF.y;
+		Ei.z = Ei.z / PDF.z;
 	}
-
-	if ( PDF.y > 0 )
-		PDF.y = std::max( EPSILON, PDF.y );
-	else
-	{
-		std::cout << "Negative PDF" << std::endl;
-		return vec3( 0.f, 0.f, 0.f );
-		//PDF.y = std::min( -EPSILON, PDF.y );
-	}
-
-
-	if ( PDF.z > 0 )
-		PDF.z = std::max( EPSILON, PDF.z );
-	else
-	{
-		std::cout << "Negative PDF" << std::endl;
-		return vec3( 0.f, 0.f, 0.f );
-		//PDF.z = std::min( -EPSILON, PDF.z );
-	}
-
-	Ei.x = Ei.x / PDF.x;
-	Ei.y = Ei.y / PDF.y;
-	Ei.z = Ei.z / PDF.z;
-
 
 
 	float solidAngle = ( cos_o * randomLightArea ) / ( distance * distance );
-	Ld = Ld * solidAngle * BRDF * cos_i;
+	Ld = Ld * solidAngle * BRDF * cos_i; // NEED TO MULTIPLY BY NUM OF LIGHTS HERE?
 
 
 	return BRDF * Ei + Ld;
