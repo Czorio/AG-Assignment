@@ -15,12 +15,23 @@ struct Hit
 	Material mat;
 };
 
+enum RayType
+{
+	PRIMARY_RAY,
+	LIGHT_RAY,
+	INDIRECT_RAY
+};
+
 struct Ray
 {
 	vec3 origin;
 	vec3 direction;
+	RayType type;
 	// Refraction index of current medium
 	float refractionIndex = 1.f;
+	
+	// Ray constructor
+	Ray() : type(PRIMARY_RAY) {}
 
 	vec3 operator()( const float t ) const
 	{

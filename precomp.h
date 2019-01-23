@@ -95,10 +95,10 @@ using namespace Tmpl8;
 #include "Light.h"
 #include "Ray.h"
 #include "Camera.h"
+#include "Sample.h"
 #include "Primitive.h"
 #include "OBJLoader.h"
 #include "BVH.h"
-#include "Filter.h"
 #include "Renderer.h"
 
 #include "game.h"

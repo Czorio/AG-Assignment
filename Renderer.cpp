@@ -41,6 +41,15 @@ Renderer::Renderer( vector<Primitive *> primitives ) : bvh( BVH( primitives ) )
 	}
 
 	this->primitives = primitives;
+
+	// Create a vector with the primitives that are light sources
+	// Handy for the Next Event Estimation
+	uint count = 0;
+	for ( auto prim : primitives )
+	{
+		if ( prim->mat.type == EMIT_MAT )
+			lightIndices.push_back( count++ );
+	}
 }
 
 Renderer::~Renderer()
@@ -207,39 +216,16 @@ vec3 getPointOnHemi()
 {
 	vec3 point;
 
-	do
-	{
-		point = 2.f * vec3( Rand( 1.f ), Rand( 1.f ), Rand( 1.f ) ) - vec3( 1.f, 1.f, 1.f );
-	} while ( point.sqrLentgh() >= 1 );
+#ifdef IMPORTANCE_SAMPLING
+	vec3 point = Sample::cosineSampleHemisphere( r1, r2 );
+#else
+	vec3 point = Sample::uniformSampleHemisphere( r1, r2 );
+#endif
 
 	return point;
 }
 
-void createLocalCoordinateSystem( const vec3 &N, vec3 &Nt, vec3 &Nb )
-{
-	// This came out of my head - maybe there is better option
-	// However, two other things tested did not work (scratchapixel & gpu blog)
-	if ( abs( N.z ) > EPSILON )
-	{
-		Nt.x = 1.5 * N.x; // arbitary
-		Nt.y = 1.5 * N.y; // arbitary
-		Nt.z = -( Nt.x * N.x + Nt.y * N.y ) / N.z;
-	}
-	else if ( abs( N.y ) > EPSILON )
-	{
-		Nt.x = 1.5 * N.x; // arbitary
-		Nt.z = 1.5 * N.z; // arbitary
-		Nt.y = -( Nt.x * N.x + Nt.z * N.z ) / N.y;
-	}
-	else
-	{
-		Nt.y = 1.5 * N.y; // arbitary
-		Nt.z = 1.5 * N.z; // arbitary
-		Nt.x = -( Nt.y * N.y + Nt.z * N.z ) / N.x;
-	}
-	Nt = normalize( Nt );
-	Nb = normalize( cross( N, Nt ) );
-}
+
 
 vec3 calculateDiffuseRayDir( const vec3 &N, const vec3 &Nt, const vec3 &Nb )
 {
@@ -248,6 +234,7 @@ vec3 calculateDiffuseRayDir( const vec3 &N, const vec3 &Nt, const vec3 &Nb )
 
 	// Transform point vector to the local coordinate system of the hit point
 	// https://www.scratchapixel.com/lessons/3d-basic-rendering/global-illumination-path-tracing/global-illumination-path-tracing-practical-implementation
+
 	vec3 newdir(
 		pointOnHemi.x * Nb.x + pointOnHemi.y * N.x + pointOnHemi.z * Nt.x,
 		pointOnHemi.x * Nb.y + pointOnHemi.y * N.y + pointOnHemi.z * Nt.y,
@@ -257,7 +244,16 @@ vec3 calculateDiffuseRayDir( const vec3 &N, const vec3 &Nt, const vec3 &Nb )
 	return normalize( newdir );
 }
 
-vec3 Renderer::shootRay( const unsigned x, const unsigned y, const Ray &r, unsigned depth, bool bvh_debug ) const
+void Renderer::randomPointOnLight( const vec3 &sensorPoint, vec3 &randomPoint, float &randomLightArea, vec3 &lightNormal ) const
+{
+	int randomLight = (int)Rand(lightIndices.size());
+	randomPoint = primitives[randomLight]->getRandomSurfacePoint( sensorPoint );
+	const float &d = ( randomPoint - sensorPoint ).length();
+	randomLightArea = primitives[randomLight]->getArea(d);
+	lightNormal = primitives[randomLight]->getNormal(randomPoint);
+}
+
+vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 {
 	if ( depth > MAXRAYDEPTH ) return vec3( 0.f, 0.f, 0.f );
 
@@ -280,21 +276,130 @@ vec3 Renderer::shootRay( const unsigned x, const unsigned y, const Ray &r, unsig
 		return vec3( AMBIENTLIGHT );
 	}
 
+	// Next Event Estimation
 	// Closest hit is light source
-	if ( closestHit.mat.type == EMIT ) return closestHit.mat.emission;
-
+	if ( closestHit.mat.type == EMIT_MAT )
+	{
+		switch ( r.type )
+		{
+		case RayType::INDIRECT_RAY:
+			return vec3( 0.f, 0.f, 0.f );
+			break;
+		case RayType::LIGHT_RAY:
+			return closestHit.mat.emission;
+			break;
+		default:
+			return closestHit.mat.albedo;
+			break;
+		}
+	}
+	// Closest hit is object/primitive but ray is light ray
+	// Does not work for cases where light source is obstracted by another light source
+	// Currently: does not work for mirrors!
+	if ( closestHit.mat.type != EMIT_MAT && r.type == RayType::LIGHT_RAY )
+		return vec3( 0.f, 0.f, 0.f );
+	
 	// Create the local coordinate system of the hit point
 	vec3 Nt, Nb;
-	createLocalCoordinateSystem( closestHit.normal, Nt, Nb );
-	// Calculate random diffused ray
+	Sample::createLocalCoordinateSystem( closestHit.normal, Nt, Nb );
+
+	// Direct illumination calculations
+	// Calculate direct ray (aiming to a random light)
+	float randomLightArea;
+	vec3 randomPoint;
+	vec3 lightNormal;
+	Renderer::randomPointOnLight( closestHit.coordinates, randomPoint, randomLightArea, lightNormal );
+
+	// As in slide 18 (lecture "Path Tracing")
+	vec3 L = randomPoint - closestHit.coordinates;
+	float distance = L.length();
+	L = normalize( L );
+
+	// The following are the visibility factor
+	float cos_o = dot( -L, lightNormal );	  // --> checks for light-ray intersection
+	float cos_i = dot( L, closestHit.normal ); // --> checks for primitive-ray intersection
+	//if ( ( cos_o <= 0 ) || ( cos_i <= 0 ) )
+	//	return vec3( 0.f, 0.f, 0.f );
+	cos_o = std::max( 0.f, cos_o );
+	cos_i = std::max( 0.f, cos_i );
+
+
+	// Slide 26 ("Variance reduction")
+	// Shoot the direct ray (light ray)
+	Ray directRay;
+	directRay.direction = L;
+	directRay.origin = closestHit.coordinates + REFLECTIONBIAS * directRay.direction;
+	directRay.type = RayType::LIGHT_RAY;
+	vec3 Ld = shootRay( directRay, 0 ); // no splitting for light rays, depth=0 
+
+	// Calculate random diffused ray (cosine weighted or uniform depending if "I.S." on)
 	Ray diffray;
 	diffray.direction = calculateDiffuseRayDir( closestHit.normal, Nt, Nb );
 	diffray.origin = closestHit.coordinates + REFLECTIONBIAS * diffray.direction;
+	diffray.type = RayType::INDIRECT_RAY;
 
+	// N*R dot product, Slide 47 Lecture "Variance reduction"
+	float dpro = dot( closestHit.normal, diffray.direction );
+
+	if ( dpro < 0 )
+	{
+		// This normally should not happen
+		std::cout << "dpro < 0 " << std::endl;
+		return vec3( 0.f, 0.f, 0.f );
+	}
+
+#ifdef IMPORTANCE_SAMPLING
+	// Importance sampling (slide 47- lecture 8,9)
+	vec3 PDF = dpro / PI;
+#else
+	vec3 PDF = 1 / ( 2.0f * PI );
+#endif
+
+	// Update light accumulutation
 	vec3 BRDF = closestHit.mat.albedo * ( 1 / PI );
-	vec3 Ei = shootRay( x, y, diffray, depth - 1, bvh_debug ) * dot( closestHit.normal, diffray.direction );
+	vec3 Ei = shootRay( diffray, depth + 1 ) * dpro;
 
-	return PI * 2.0f * BRDF * Ei;
+	// No / operator !
+	// Dont divide with zero ! - Put the following in some function ???
+	if ( PDF.x > 0 )
+		PDF.x = std::max( EPSILON, PDF.x );
+	else
+	{
+		std::cout << "Negative PDF" << std::endl;
+		return vec3( 0.f, 0.f, 0.f );
+		//PDF.x = std::min( -EPSILON, PDF.x );
+	}
+
+	if ( PDF.y > 0 )
+		PDF.y = std::max( EPSILON, PDF.y );
+	else
+	{
+		std::cout << "Negative PDF" << std::endl;
+		return vec3( 0.f, 0.f, 0.f );
+		//PDF.y = std::min( -EPSILON, PDF.y );
+	}
+
+
+	if ( PDF.z > 0 )
+		PDF.z = std::max( EPSILON, PDF.z );
+	else
+	{
+		std::cout << "Negative PDF" << std::endl;
+		return vec3( 0.f, 0.f, 0.f );
+		//PDF.z = std::min( -EPSILON, PDF.z );
+	}
+
+	Ei.x = Ei.x / PDF.x;
+	Ei.y = Ei.y / PDF.y;
+	Ei.z = Ei.z / PDF.z;
+
+
+
+	float solidAngle = ( cos_o * randomLightArea ) / ( distance * distance );
+	Ld = Ld * solidAngle * BRDF * cos_i;
+
+
+	return BRDF * Ei + Ld;
 }
 
 Pixel Renderer::rgb( float r, float g, float b ) const
