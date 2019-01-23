@@ -34,13 +34,11 @@ class Renderer
 	Pixel *buffer;
 	bool *boolbuffer; // TEST
 
-	vec3 shootRay( unsigned x, unsigned y, unsigned depth ) const;
-	vec3 shootRay( const Ray &r, unsigned depth ) const;
-	void randomPointOnLight( const vec3 &sensePoint, vec3 &randomPoint, float &randomLightArea, vec3 &lightNormal ) const;
-	void invalidatePrebuffer();
+	float *kernel;
 
 	vec3 shootRay( unsigned x, unsigned y, unsigned depth, bool bvh_debug ) const;
-	vec3 shootRay( const unsigned x, const unsigned y, const Ray &r, unsigned depth, bool bvh_debug ) const;
+	vec3 shootRay( const Ray &r, unsigned depth, bool bvh_debug ) const;
+	void randomPointOnLight( const vec3 &sensePoint, vec3 &randomPoint, float &randomLightArea, vec3 &lightNormal ) const;
 
 	// rgb to Pixel
 	Pixel rgb( float r, float g, float b ) const;

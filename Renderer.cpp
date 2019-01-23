@@ -47,7 +47,7 @@ Renderer::Renderer( vector<Primitive *> primitives ) : bvh( BVH( primitives ) )
 	uint count = 0;
 	for ( auto prim : primitives )
 	{
-		if ( prim->mat.type == EMIT_MAT )
+		if ( prim->mat.type == EMIT )
 			lightIndices.push_back( count++ );
 	}
 }
@@ -197,7 +197,7 @@ Pixel *Renderer::getOutput() const
 vec3 Renderer::shootRay( unsigned x, unsigned y, unsigned depth, bool bvh_debug ) const
 {
 	Ray r = cam.getRay( x, y );
-	return shootRay( x, y, r, depth, bvh_debug );
+	return shootRay( r, depth, bvh_debug );
 }
 
 __inline void clampFloat( float &val, float lo, float hi )
@@ -214,18 +214,14 @@ __inline void clampFloat( float &val, float lo, float hi )
 
 vec3 getPointOnHemi()
 {
-	vec3 point;
-
 #ifdef IMPORTANCE_SAMPLING
-	vec3 point = Sample::cosineSampleHemisphere( r1, r2 );
+	vec3 point = Sample::cosineSampleHemisphere( Rand( 1.f ), Rand( 1.f ) );
 #else
-	vec3 point = Sample::uniformSampleHemisphere( r1, r2 );
+	vec3 point = Sample::uniformSampleHemisphere( Rand( 1.f ), Rand( 1.f ) );
 #endif
 
 	return point;
 }
-
-
 
 vec3 calculateDiffuseRayDir( const vec3 &N, const vec3 &Nt, const vec3 &Nb )
 {
@@ -246,14 +242,14 @@ vec3 calculateDiffuseRayDir( const vec3 &N, const vec3 &Nt, const vec3 &Nb )
 
 void Renderer::randomPointOnLight( const vec3 &sensorPoint, vec3 &randomPoint, float &randomLightArea, vec3 &lightNormal ) const
 {
-	int randomLight = (int)Rand(lightIndices.size());
+	int randomLight = (int)Rand( lightIndices.size() );
 	randomPoint = primitives[randomLight]->getRandomSurfacePoint( sensorPoint );
 	const float &d = ( randomPoint - sensorPoint ).length();
-	randomLightArea = primitives[randomLight]->getArea(d);
-	lightNormal = primitives[randomLight]->getNormal(randomPoint);
+	randomLightArea = primitives[randomLight]->getArea( d );
+	lightNormal = primitives[randomLight]->getNormal( randomPoint );
 }
 
-vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
+vec3 Renderer::shootRay( const Ray &r, unsigned depth, bool bvh_debug ) const
 {
 	if ( depth > MAXRAYDEPTH ) return vec3( 0.f, 0.f, 0.f );
 
@@ -264,12 +260,6 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 
 	Hit closestHit = bvh.intersect( r );
 
-	// A little hacky, but unless the entire structure is changed, this is the best way
-	if ( depth == MAXRAYDEPTH )
-	{
-		depthbuffer[y * SCRWIDTH + x] += closestHit.t;
-	}
-
 	// No hit
 	if ( closestHit.t == FLT_MAX )
 	{
@@ -278,7 +268,7 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 
 	// Next Event Estimation
 	// Closest hit is light source
-	if ( closestHit.mat.type == EMIT_MAT )
+	if ( closestHit.mat.type == EMIT )
 	{
 		switch ( r.type )
 		{
@@ -296,9 +286,9 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 	// Closest hit is object/primitive but ray is light ray
 	// Does not work for cases where light source is obstracted by another light source
 	// Currently: does not work for mirrors!
-	if ( closestHit.mat.type != EMIT_MAT && r.type == RayType::LIGHT_RAY )
+	if ( closestHit.mat.type != EMIT && r.type == RayType::LIGHT_RAY )
 		return vec3( 0.f, 0.f, 0.f );
-	
+
 	// Create the local coordinate system of the hit point
 	vec3 Nt, Nb;
 	Sample::createLocalCoordinateSystem( closestHit.normal, Nt, Nb );
@@ -323,14 +313,13 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 	cos_o = std::max( 0.f, cos_o );
 	cos_i = std::max( 0.f, cos_i );
 
-
 	// Slide 26 ("Variance reduction")
 	// Shoot the direct ray (light ray)
 	Ray directRay;
 	directRay.direction = L;
 	directRay.origin = closestHit.coordinates + REFLECTIONBIAS * directRay.direction;
 	directRay.type = RayType::LIGHT_RAY;
-	vec3 Ld = shootRay( directRay, 0 ); // no splitting for light rays, depth=0 
+	vec3 Ld = shootRay( directRay, 0, false ); // no splitting for light rays, depth=0
 
 	// Calculate random diffused ray (cosine weighted or uniform depending if "I.S." on)
 	Ray diffray;
@@ -357,7 +346,7 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 
 	// Update light accumulutation
 	vec3 BRDF = closestHit.mat.albedo * ( 1 / PI );
-	vec3 Ei = shootRay( diffray, depth + 1 ) * dpro;
+	vec3 Ei = shootRay( diffray, depth + 1, false ) * dpro;
 
 	// No / operator !
 	// Dont divide with zero ! - Put the following in some function ???
@@ -379,7 +368,6 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 		//PDF.y = std::min( -EPSILON, PDF.y );
 	}
 
-
 	if ( PDF.z > 0 )
 		PDF.z = std::max( EPSILON, PDF.z );
 	else
@@ -393,11 +381,8 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 	Ei.y = Ei.y / PDF.y;
 	Ei.z = Ei.z / PDF.z;
 
-
-
 	float solidAngle = ( cos_o * randomLightArea ) / ( distance * distance );
 	Ld = Ld * solidAngle * BRDF * cos_i;
-
 
 	return BRDF * Ei + Ld;
 }
