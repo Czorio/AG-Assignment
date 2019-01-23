@@ -64,7 +64,7 @@ void Renderer::renderFrame()
 				{
 					if ( ( x + dx ) < SCRWIDTH && ( y + dy ) < SCRHEIGHT )
 					{
-						prebuffer[( y + dy ) * SCRWIDTH + ( x + dx )] += shootRay( x + dx, y + dy, MAXRAYDEPTH );
+						prebuffer[( y + dy ) * SCRWIDTH + ( x + dx )] += shootRay( x + dx, y + dy, 0 );
 					}
 				}
 			}
@@ -202,10 +202,6 @@ vec3 calculateDiffuseRayDir( const vec3 &N, const vec3 &Nt, const vec3 &Nb )
 
 	// Transform point vector to the local coordinate system of the hit point
 	// https://www.scratchapixel.com/lessons/3d-basic-rendering/global-illumination-path-tracing/global-illumination-path-tracing-practical-implementation
-	//vec3 newdir(
-	//	pointOnHemi.x * Nb.x + pointOnHemi.y * N.x + pointOnHemi.z * Nt.x,
-	//	pointOnHemi.x * Nb.y + pointOnHemi.y * N.y + pointOnHemi.z * Nt.y,
-	//	pointOnHemi.x * Nb.z + pointOnHemi.y * N.z + pointOnHemi.z * Nt.z );
 
 	vec3 newdir(
 		pointOnHemi.x * Nb.x + pointOnHemi.y * N.x + pointOnHemi.z * Nt.x,
@@ -264,14 +260,44 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 	vec3 Nt, Nb;
 	Sample::createLocalCoordinateSystem( closestHit.normal, Nt, Nb );
 
+	// Direct illumination calculations
+	// Calculate direct ray (aiming to a random light)
+	float randomLightArea;
+	vec3 randomPoint;
+	vec3 lightNormal;
+	Renderer::randomPointOnLight( closestHit.coordinates, randomPoint, randomLightArea, lightNormal );
+
+	// As in slide 18 (lecture "Path Tracing")
+	vec3 L = randomPoint - closestHit.coordinates;
+	float distance = L.length();
+	L = normalize( L );
+
+	// The following are the visibility factor
+	float cos_o = dot( -L, lightNormal );	  // --> checks for light-ray intersection
+	float cos_i = dot( L, closestHit.normal ); // --> checks for primitive-ray intersection
+	//if ( ( cos_o <= 0 ) || ( cos_i <= 0 ) )
+	//	return vec3( 0.f, 0.f, 0.f );
+	cos_o = std::max( 0.f, cos_o );
+	cos_i = std::max( 0.f, cos_i );
+
+
+	// Slide 26 ("Variance reduction")
+	// Shoot the direct ray (light ray)
+	Ray directRay;
+	directRay.direction = L;
+	directRay.origin = closestHit.coordinates + REFLECTIONBIAS * directRay.direction;
+	directRay.type = RayType::LIGHT_RAY;
+	vec3 Ld = shootRay( directRay, 0 ); // no splitting for light rays, depth=0 
+
 	// Calculate random diffused ray (cosine weighted or uniform depending if "I.S." on)
 	Ray diffray;
-	diffray.origin = closestHit.coordinates + REFLECTIONBIAS * diffray.direction;
 	diffray.direction = calculateDiffuseRayDir( closestHit.normal, Nt, Nb );
+	diffray.origin = closestHit.coordinates + REFLECTIONBIAS * diffray.direction;
 	diffray.type = RayType::INDIRECT_RAY;
 
 	// N*R dot product, Slide 47 Lecture "Variance reduction"
 	float dpro = dot( closestHit.normal, diffray.direction );
+
 	if ( dpro < 0 )
 	{
 		// This normally should not happen
@@ -288,9 +314,8 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 
 	// Update light accumulutation
 	vec3 BRDF = closestHit.mat.albedo * ( 1 / PI );
-
-
 	vec3 Ei = shootRay( diffray, depth + 1 ) * dpro;
+
 	// No / operator !
 	// Dont divide with zero ! - Put the following in some function ???
 	if ( PDF.x > 0 )
@@ -325,31 +350,7 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 	Ei.y = Ei.y / PDF.y;
 	Ei.z = Ei.z / PDF.z;
 
-	// Direct illumination calculations
-	// Calculate direct ray (aiming to a random light)
-	float randomLightArea;
-	vec3 randomPoint;
-	vec3 lightNormal;
-	Renderer::randomPointOnLight( closestHit.coordinates, randomPoint, randomLightArea, lightNormal );
 
-	// As in slide 18 (lecture "Path Tracing")
-	vec3 L = randomPoint - closestHit.coordinates;
-	float distance = L.length();
-	L = normalize( L );
-
-	// The following are the visibility factor
-	float cos_o = dot( -L, lightNormal );	  // --> checks for light-ray intersection
-	float cos_i = dot( L, closestHit.normal ); // --> checks for primitive-ray intersection
-	if ( ( cos_o <= 0 ) || ( cos_i <= 0 ) )
-		return vec3( 0.f, 0.f, 0.f );
-
-	// Slide 26 ("Variance reduction")
-	// Shoot the direct ray (light ray)
-	Ray directRay;
-	directRay.direction = L;
-	directRay.origin = closestHit.coordinates + REFLECTIONBIAS * directRay.direction;
-	directRay.type = RayType::LIGHT_RAY;
-	vec3 Ld = shootRay( directRay, 0 ); // no splitting for light rays, depth=0 
 
 	float solidAngle = ( cos_o * randomLightArea ) / ( distance * distance );
 	Ld = Ld * solidAngle * BRDF * cos_i;
