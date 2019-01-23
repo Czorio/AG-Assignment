@@ -19,7 +19,7 @@
 #define BVHDEPTH 128
 #define BINCOUNT 32 // this can also be reduced for faster construction
 
-#define MAXRAYDEPTH 4
+#define MAXRAYDEPTH 8
 #define SAMPLES 4
 #define ITERATIONS 1024
 
@@ -27,6 +27,8 @@
 #define REFLECTIONBIAS 0.01f
 #define REFRACTIONBIAS 0.001f
 #define EPSILON 0.0001f
+
+#define FIREFLY 10.f
 
 #define AMBIENTLIGHT 0.f
 

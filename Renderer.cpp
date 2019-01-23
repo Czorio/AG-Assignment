@@ -5,29 +5,11 @@ Renderer::Renderer( vector<Primitive *> primitives ) : bvh( BVH( primitives ) )
 	currentIteration = 1;
 
 	prebuffer = new vec3[SCRWIDTH * SCRHEIGHT];
-	depthbuffer = new float[SCRWIDTH * SCRHEIGHT];
-	postbuffer = new vec3[SCRWIDTH * SCRHEIGHT];
 
 	for ( unsigned i = 0; i < SCRWIDTH * SCRHEIGHT; i++ )
 	{
 		prebuffer[i] = vec3( 0.f, 0.f, 0.f );
-		depthbuffer[i] = 0.f;
-		postbuffer[i] = vec3( 0.f, 0.f, 0.f );
 	}
-
-	kernel = new float[3 * 3];
-
-	kernel[0] = 1.f / 16.f;
-	kernel[1] = 1.f / 8.f;
-	kernel[2] = 1.f / 16.f;
-
-	kernel[3] = 1.f / 8.f;
-	kernel[4] = 1.f / 4.f;
-	kernel[5] = 1.f / 8.f;
-
-	kernel[6] = 1.f / 16.f;
-	kernel[7] = 1.f / 8.f;
-	kernel[8] = 1.f / 16.f;
 
 	buffer = new Pixel[SCRWIDTH * SCRHEIGHT];
 
@@ -82,7 +64,15 @@ void Renderer::renderFrame( bool bvh_debug )
 				{
 					if ( ( x + dx ) < SCRWIDTH && ( y + dy ) < SCRHEIGHT )
 					{
-						prebuffer[( y + dy ) * SCRWIDTH + ( x + dx )] += shootRay( x + dx, y + dy, MAXRAYDEPTH, bvh_debug );
+						// Firefly surpression
+						vec3 color = shootRay( x + dx, y + dy, 0, bvh_debug );
+
+						if ( color.sqrLentgh() > FIREFLY * FIREFLY )
+						{
+							color *= vec3(1.f / color.length());
+						}
+
+						prebuffer[( y + dy ) * SCRWIDTH + ( x + dx )] += color;
 					}
 				}
 			}
@@ -100,9 +90,7 @@ void Renderer::invalidatePrebuffer()
 {
 	for ( size_t i = 0; i < SCRWIDTH * SCRHEIGHT; i++ )
 	{
-		prebuffer[i] = vec3();
-		depthbuffer[i] = 0.f;
-		postbuffer[i] = vec3();
+		prebuffer[i] = vec3( 0.f, 0.f, 0.f );
 	}
 
 	currentIteration = 1;
@@ -118,12 +106,14 @@ Camera *Renderer::getCamera()
 	return &cam;
 }
 
+// As preparation for iterative rendering
 void Renderer::moveCam( vec3 vec )
 {
 	invalidatePrebuffer();
 	cam.move( vec );
 }
 
+// As preparation for iterative rendering
 void Renderer::rotateCam( vec3 vec )
 {
 	invalidatePrebuffer();
@@ -154,41 +144,10 @@ Pixel *Renderer::getOutput() const
 {
 	// currentSample - 1 because it is increased in the renderFrame() function in preparation of the next frame.
 	// Unfortunately, we are getting the current frame, so we get currentSample - 1.
-	float average = 1.f / float( currentIteration - 1 );
-	/*
-#pragma omp parallel for
-	for ( int y = 0; y < SCRHEIGHT; y++ )
-	{
-		for ( int x = 0; x < SCRWIDTH; x++ )
-		{
-			vec3 value = vec3();
-			float depth = depthbuffer[y * SCRHEIGHT + x];
-			// Kernel
-			for ( int dy = -1; dy < 2; dy++ )
-			{
-				for ( int dx = -1; dx < 2; dx++ )
-				{
-					if ( ( y + dy > 0 && y + dy < SCRHEIGHT ) && ( x + dx > 0 && x + dx < SCRWIDTH ) )
-					{
-						if ( abs( depthbuffer[( y + dy ) * SCRHEIGHT + ( x + dx )] - depth ) < FILTERBIAS )
-						{
-							value += prebuffer[( y + dy ) * SCRHEIGHT + ( x + dx )] * importance * kernel[( dy + 1 ) * 3 + ( dx + 1 )];
-						}
-						else
-						{
-							value += prebuffer[y * SCRHEIGHT + x] * importance * kernel[( dy + 1 ) * 3 + ( dx + 1 )];
-						}
-					}
-				}
-			}
-
-			postbuffer[y * SCRHEIGHT + x] = value;
-		}
-	}
-	*/
+	float importance = 1.f / float( currentIteration - 1 );
 	for ( unsigned i = 0; i < SCRWIDTH * SCRHEIGHT; i++ )
 	{
-		buffer[i] = rgb( gammaCorrect( prebuffer[i] * average ) );
+		buffer[i] = rgb( gammaCorrect( prebuffer[i] * importance ) );
 	}
 
 	return buffer;
@@ -211,6 +170,17 @@ __inline void clampFloat( float &val, float lo, float hi )
 		val = lo;
 	}
 }
+
+// FROM Ray-tracer:
+//Ray getReflectedRay( const vec3 &incoming, const vec3 &normal, const vec3 &hitLocation )
+//{
+//	Ray r;
+//	vec3 outgoing = incoming - 2.f * incoming.dot( normal ) * normal;
+//	r.origin = hitLocation + ( REFLECTIONBIAS * outgoing );
+//	r.direction = outgoing;
+//
+//	return r;
+//}
 
 vec3 getPointOnHemi()
 {
@@ -263,7 +233,7 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth, bool bvh_debug ) const
 	// No hit
 	if ( closestHit.t == FLT_MAX )
 	{
-		return vec3( AMBIENTLIGHT );
+		return vec3( 0.f, 0.f, 0.f );
 	}
 
 	// Next Event Estimation

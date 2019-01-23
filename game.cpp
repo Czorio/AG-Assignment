@@ -128,7 +128,7 @@ void Game::Shutdown()
 }
 
 bool showHelp = false;
-bool BVH_DEBUG = true;
+bool BVH_DEBUG = false;
 
 bool moveLeft = false;
 bool moveRight = false;
