@@ -12,30 +12,30 @@ void Game::Init()
 	Camera cam = Camera( vec3( 0.f, -0.75f, -5.f ), vec3( 0.f, -0.75f, 0.f ), vec3( 0.f, 1.f, 0.f ), PI / 4, ( (float)SCRWIDTH / (float)SCRHEIGHT ), 0.f, 0.5f, 1.f );
 
 	Material monkeyMat;
-	monkeyMat.type = MaterialType::LAMBERTIAN_MAT;
+	monkeyMat.type = MaterialType::LAMBERTIAN;
 	monkeyMat.albedo = vec3( 0.25f, 0.25f, 0.25f );
 
 	Material eyesRedMat;
-	eyesRedMat.type = MaterialType::EMIT_MAT;
+	eyesRedMat.type = MaterialType::EMIT;
 	eyesRedMat.albedo = vec3( 1.f, 0.25f, 0.25f );
 	eyesRedMat.emission = eyesRedMat.albedo * 100.f;
 
 	Material eyesGreenMat;
-	eyesGreenMat.type = MaterialType::EMIT_MAT;
+	eyesGreenMat.type = MaterialType::EMIT;
 	eyesGreenMat.albedo = vec3( 0.25f, 1.f, 0.25f );
 	eyesGreenMat.emission = eyesGreenMat.albedo * 100.f;
 
 	Material eyesBlueMat;
-	eyesBlueMat.type = MaterialType::EMIT_MAT;
+	eyesBlueMat.type = MaterialType::EMIT;
 	eyesBlueMat.albedo = vec3( 0.25f, 0.25f, 1.f );
 	eyesBlueMat.emission = eyesBlueMat.albedo * 100.f;
 
 	Material personMat;
-	personMat.type = MaterialType::LAMBERTIAN_MAT;
+	personMat.type = MaterialType::LAMBERTIAN;
 	personMat.albedo = vec3( 0.95f, 0.95f, 0.95f );
 
 	Material cillinderMat;
-	cillinderMat.type = MaterialType::LAMBERTIAN_MAT;
+	cillinderMat.type = MaterialType::LAMBERTIAN;
 	cillinderMat.albedo = vec3( 0.95f, 0.95f, 0.95f );
 
 	vector<Primitive *> monkeys = loadOBJ( "assets/final/Monkeys.obj", monkeyMat );
@@ -56,13 +56,13 @@ void Game::Init()
 	scene.insert( scene.end(), person.begin(), person.end() );
 
 	Material basePlaneMat;
-	basePlaneMat.type = MaterialType::LAMBERTIAN_MAT;
+	basePlaneMat.type = MaterialType::LAMBERTIAN;
 	basePlaneMat.albedo = vec3( 0.5f, 0.5f, 0.5f );
 	monkeys.push_back( new Sphere( vec3( 0.f, 2500.f, 0.f ), 2500.f, basePlaneMat ) );
 	//scene.push_back( new Sphere( vec3( 0.f, 2500.f, 0.f ), 2500.f, basePlaneMat ) );
 
 	Material overheadLightMat;
-	overheadLightMat.type = MaterialType::EMIT_MAT;
+	overheadLightMat.type = MaterialType::EMIT;
 	overheadLightMat.albedo = vec3( 1.f, 1.f, 1.f );
 	overheadLightMat.emission = overheadLightMat.albedo * 1.f;
 	//monkeys.push_back( new Sphere( vec3( 0.f, -105.f, 0.f ), 100.f, overheadLightMat) );

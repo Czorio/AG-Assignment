@@ -281,7 +281,7 @@ vec3 Renderer::shootRay( const unsigned x, const unsigned y, const Ray &r, unsig
 	}
 
 	// Closest hit is light source
-	if ( closestHit.mat.type == EMIT_MAT ) return closestHit.mat.emission;
+	if ( closestHit.mat.type == EMIT ) return closestHit.mat.emission;
 
 	// Create the local coordinate system of the hit point
 	vec3 Nt, Nb;

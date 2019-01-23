@@ -9,8 +9,10 @@ struct Texture
 
 enum MaterialType
 {
-	LAMBERTIAN_MAT,
-	EMIT_MAT // for lights
+	LAMBERTIAN,
+	DIELECTRIC,
+	MIRROR,
+	EMIT // for lights
 };
 
 struct Material
