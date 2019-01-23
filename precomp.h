@@ -7,6 +7,8 @@
 // Prevent expansion clashes (when using std::min and std::max):
 #define NOMINMAX
 
+#define FINAL
+
 #define MAX_IDLE_FPS 60.f
 
 #define SCRWIDTH 512

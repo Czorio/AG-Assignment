@@ -12,65 +12,39 @@ void Game::Init()
 #ifdef FINAL
 	Camera cam = Camera( vec3( 0.f, -0.75f, -5.f ), vec3( 0.f, -0.75f, 0.f ), vec3( 0.f, 1.f, 0.f ), PI / 4, ( (float)SCRWIDTH / (float)SCRHEIGHT ), 0.f, 0.5f, 1.f );
 
-	Material monkeyMat;
-	monkeyMat.type = MaterialType::LAMBERTIAN;
-	monkeyMat.albedo = vec3( 0.25f, 0.25f, 0.25f );
+	Material roomMat;
+	roomMat.type = LAMBERTIAN;
+	roomMat.albedo = vec3( 1.f, 1.f, 1.f );
 
-	Material eyesRedMat;
-	eyesRedMat.type = MaterialType::EMIT;
-	eyesRedMat.albedo = vec3( 1.f, 0.25f, 0.25f );
-	eyesRedMat.emission = eyesRedMat.albedo * 100.f;
+	Material redMat;
+	redMat.type = LAMBERTIAN;
+	redMat.albedo = vec3( 1.f, 0.f, 0.f );
 
-	Material eyesGreenMat;
-	eyesGreenMat.type = MaterialType::EMIT;
-	eyesGreenMat.albedo = vec3( 0.25f, 1.f, 0.25f );
-	eyesGreenMat.emission = eyesGreenMat.albedo * 100.f;
+	Material greenMat;
+	greenMat.type = LAMBERTIAN;
+	greenMat.albedo = vec3( 0.f, 1.f, 0.f );
 
-	Material eyesBlueMat;
-	eyesBlueMat.type = MaterialType::EMIT;
-	eyesBlueMat.albedo = vec3( 0.25f, 0.25f, 1.f );
-	eyesBlueMat.emission = eyesBlueMat.albedo * 100.f;
+	Material blueMat;
+	blueMat.type = LAMBERTIAN;
+	blueMat.albedo = vec3( 0.f, 0.f, 1.f );
 
-	Material personMat;
-	personMat.type = MaterialType::LAMBERTIAN;
-	personMat.albedo = vec3( 0.95f, 0.95f, 0.95f );
+	vector<Primitive *> room = loadOBJ( "assets/final/Monkeys.obj", roomMat );
+	vector<Primitive *> tri1 = loadOBJ( "assets/final/Cillinder.obj", redMat );
+	vector<Primitive *> tri2 = loadOBJ( "assets/final/MonkeyEyesRed.obj", greenMat );
+	vector<Primitive *> tri3 = loadOBJ( "assets/final/MonkeyEyesGreen.obj", blueMat );
 
-	Material cillinderMat;
-	cillinderMat.type = MaterialType::LAMBERTIAN;
-	cillinderMat.albedo = vec3( 0.95f, 0.95f, 0.95f );
-
-	vector<Primitive *> monkeys = loadOBJ( "assets/final/Monkeys.obj", monkeyMat );
-	vector<Primitive *> cillinder = loadOBJ( "assets/final/Cillinder.obj", cillinderMat );
-	vector<Primitive *> redEyes = loadOBJ( "assets/final/MonkeyEyesRed.obj", eyesRedMat );
-	vector<Primitive *> blueEyes = loadOBJ( "assets/final/MonkeyEyesGreen.obj", eyesBlueMat );
-	vector<Primitive *> greenEyes = loadOBJ( "assets/final/MonkeyEyesBlue.obj", eyesGreenMat );
-	vector<Primitive *> person = loadOBJ( "assets/final/Person.obj", personMat );
-
-	monkeys.insert( monkeys.end(), cillinder.begin(), cillinder.end() );
-	monkeys.insert( monkeys.end(), redEyes.begin(), redEyes.end() );
-	monkeys.insert( monkeys.end(), blueEyes.begin(), blueEyes.end() );
-	monkeys.insert( monkeys.end(), greenEyes.begin(), greenEyes.end() );
-	monkeys.insert( monkeys.end(), person.begin(), person.end() );
-
-	vector<Primitive *> scene;
-	scene.insert( scene.end(), cillinder.begin(), cillinder.end() );
-	scene.insert( scene.end(), person.begin(), person.end() );
-
-	Material basePlaneMat;
-	basePlaneMat.type = MaterialType::LAMBERTIAN;
-	basePlaneMat.albedo = vec3( 0.5f, 0.5f, 0.5f );
-	monkeys.push_back( new Sphere( vec3( 0.f, 2500.f, 0.f ), 2500.f, basePlaneMat ) );
-	//scene.push_back( new Sphere( vec3( 0.f, 2500.f, 0.f ), 2500.f, basePlaneMat ) );
+	room.insert( room.end(), tri1.begin(), tri1.end() );
+	room.insert( room.end(), tri2.begin(), tri2.end() );
+	room.insert( room.end(), tri3.begin(), tri3.end() );
 
 	Material overheadLightMat;
 	overheadLightMat.type = MaterialType::EMIT;
 	overheadLightMat.albedo = vec3( 1.f, 1.f, 1.f );
-	overheadLightMat.emission = overheadLightMat.albedo * 1.f;
-	//monkeys.push_back( new Sphere( vec3( 0.f, -105.f, 0.f ), 100.f, overheadLightMat) );
-	scene.push_back( new Sphere( vec3( 0.f, -6.f, 0.f ), 1.f, overheadLightMat ) );
+	overheadLightMat.emission = overheadLightMat.albedo * 10.f;
+	room.push_back( new Sphere( vec3( 0.f, -4.f, 0.f ), 1.f, overheadLightMat ) );
 
-	renderer = new Renderer( monkeys );
-	noPrim = monkeys.size();
+	renderer = new Renderer( room );
+	noPrim = room.size();
 	noLight = 6;
 	renderer->setCamera( cam );
 #else
