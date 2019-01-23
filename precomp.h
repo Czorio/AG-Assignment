@@ -16,13 +16,13 @@
 //#define LINEAR_TRAVERSE
 #define USE_SAH
 #define USE_BVH
-#define IMPORTANCE_SAMPLING
-#define RUSSIAN_ROULETE
+// #define IMPORTANCE_SAMPLING
+#define RUSSIAN_ROULETTE
 //#define BVH_DEBUG
 #define BVHDEPTH 128
 #define BINCOUNT 16 // this can also be reduced for faster construction
 
-#define MAXRAYDEPTH 4
+#define MAXRAYDEPTH 16
 #define SAMPLES 4
 #define ITERATIONS 1024
 

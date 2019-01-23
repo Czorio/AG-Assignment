@@ -26,7 +26,7 @@ Renderer::Renderer( vector<Primitive *> primitives ) : bvh( BVH( primitives ) )
 
 	// Create a vector with the primitives that are light sources
 	// Handy for the Next Event Estimation
-	for (int i = 0; i < primitives.size(); i++)
+	for ( int i = 0; i < primitives.size(); i++ )
 	{
 		if ( primitives[i]->mat.type == EMIT_MAT )
 			lightIndices.push_back( i );
@@ -192,8 +192,6 @@ vec3 getPointOnHemi()
 	return point;
 }
 
-
-
 vec3 calculateDiffuseRayDir( const vec3 &N, const vec3 &Nt, const vec3 &Nb )
 {
 	// Sample the random point on unit hemisphere
@@ -213,11 +211,11 @@ vec3 calculateDiffuseRayDir( const vec3 &N, const vec3 &Nt, const vec3 &Nb )
 
 void Renderer::randomPointOnLight( const vec3 &sensorPoint, vec3 &randomPoint, float &randomLightArea, vec3 &lightNormal ) const
 {
-	int randomLight = (int)Rand(lightIndices.size());
+	int randomLight = (int)Rand( lightIndices.size() );
 	randomPoint = primitives[randomLight]->getRandomSurfacePoint( sensorPoint );
 	const float &d = ( randomPoint - sensorPoint ).length();
-	randomLightArea = primitives[randomLight]->getArea(d);
-	lightNormal = primitives[randomLight]->getNormal(randomPoint);
+	randomLightArea = primitives[randomLight]->getArea( d );
+	lightNormal = primitives[randomLight]->getNormal( randomPoint );
 }
 
 vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
@@ -254,7 +252,16 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 	// Currently: does not work for mirrors!
 	if ( closestHit.mat.type != EMIT_MAT && r.type == RayType::LIGHT_RAY )
 		return vec3( 0.f, 0.f, 0.f );
-	
+
+	// Russian Roulette
+#ifdef RUSSIAN_ROULETTE
+	float roulette = ( closestHit.mat.albedo.x + closestHit.mat.albedo.y + closestHit.mat.albedo.z ) / 3.f;
+	clampFloat(roulette, 0.1, 0.9);
+	if ( ( r.type == RayType::INDIRECT_RAY ) && ( Rand( 1 ) > roulette ) )
+		return vec3( 0.f, 0.f, 0.f );
+#endif
+
+
 	// Create the local coordinate system of the hit point
 	vec3 Nt, Nb;
 	Sample::createLocalCoordinateSystem( closestHit.normal, Nt, Nb );
@@ -326,8 +333,11 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth ) const
 	float solidAngle = ( cos_o * randomLightArea ) / ( distance * distance );
 	Ld = Ld * solidAngle * BRDF * cos_i; // NEED TO MULTIPLY BY NUM OF LIGHTS HERE?
 
-
+#ifdef RUSSIAN_ROULETTE
+	return BRDF * Ei * (1.f/ roulette) + Ld;
+#else
 	return BRDF * Ei + Ld;
+#endif
 }
 
 Pixel Renderer::rgb( float r, float g, float b ) const
