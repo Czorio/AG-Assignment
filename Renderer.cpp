@@ -379,3 +379,14 @@ vec3 Renderer::gammaCorrect( vec3 vec ) const
 	vec3 res = vec3( convert.a[3], convert.a[2], convert.a[1] );
 	return res;
 }
+
+void Renderer::report() const
+{
+	vec3 sum = vec3();
+	float average = 1.f / float( currentIteration );
+	for (int i = 0; i < SCRWIDTH * SCRHEIGHT; i++)
+	{
+		sum += prebuffer[i] * average;
+	}
+	printf( "Total Intensity: %f\n", sum.length() );
+}

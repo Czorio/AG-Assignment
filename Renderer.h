@@ -14,6 +14,7 @@ class Renderer
 	void zoomCam( float deltaZoom );
 	void changeAperture( float deltaAperture );
 	void focusCam();
+	void report() const;
 
 	Pixel *getOutput() const;
 

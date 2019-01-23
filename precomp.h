@@ -16,7 +16,7 @@
 //#define LINEAR_TRAVERSE
 #define USE_SAH
 #define USE_BVH
-// #define IMPORTANCE_SAMPLING
+#define IMPORTANCE_SAMPLING
 #define RUSSIAN_ROULETTE
 //#define BVH_DEBUG
 #define BVHDEPTH 128

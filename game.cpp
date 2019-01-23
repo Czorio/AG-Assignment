@@ -339,6 +339,8 @@ void Tmpl8::Game::KeyDown( int key )
 	case SDL_SCANCODE_X:
 		apertureDown = true;
 		break;
+	case SDL_SCANCODE_R:
+		renderer->report();
 	default:
 		break;
 	}
