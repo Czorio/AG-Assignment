@@ -11,7 +11,7 @@ enum MaterialType
 {
 	LAMBERTIAN_MAT,
 	DIELECTRIC_MAT,
-	MIRROR_MAT,
+	SPECULAR_MAT,
 	EMIT_MAT // for lights
 };
 

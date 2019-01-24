@@ -28,35 +28,38 @@ void Game::Init()
 	blueMat.type = LAMBERTIAN_MAT;
 	blueMat.albedo = vec3( 0.f, 0.f, 1.f );
 
-	vector<Primitive *> room = loadOBJ( "assets/final2/Room.obj", roomMat );
-	vector<Primitive *> tri1 = loadOBJ( "assets/final/Tri1.obj", redMat );
-	vector<Primitive *> tri2 = loadOBJ( "assets/final/Tri2.obj", greenMat );
-	vector<Primitive *> tri3 = loadOBJ( "assets/final/Tri3.obj", blueMat );
-
-	room.insert( room.end(), tri1.begin(), tri1.end() );
-	room.insert( room.end(), tri2.begin(), tri2.end() );
-	room.insert( room.end(), tri3.begin(), tri3.end() );
+	vector<Primitive *> scene;
 
 	Material overheadLightMat;
 	overheadLightMat.type = MaterialType::EMIT_MAT;
 	overheadLightMat.albedo = vec3( 1.f, 1.f, 1.f );
 	overheadLightMat.emission = overheadLightMat.albedo * 10.f;
-	room.push_back( new Sphere( vec3( 0.f, -4.f, 0.f ), 1.f, overheadLightMat ) );
+	scene.push_back( new Sphere( vec3( 0.f, -4.f, 0.f ), 1.f, overheadLightMat ) );
 
-	renderer = new Renderer( room );
-	noPrim = room.size();
-	noLight = 6;
+	vector<Primitive *> room = loadOBJ( "assets/final2/Room.obj", roomMat );
+	vector<Primitive *> tri1 = loadOBJ( "assets/final/Tri1.obj", redMat );
+	vector<Primitive *> tri2 = loadOBJ( "assets/final/Tri2.obj", greenMat );
+	vector<Primitive *> tri3 = loadOBJ( "assets/final/Tri3.obj", blueMat );
+
+	scene.insert( scene.end(), room.begin(), room.end() );
+	scene.insert( scene.end(), tri1.begin(), tri1.end() );
+	scene.insert( scene.end(), tri2.begin(), tri2.end() );
+	scene.insert( scene.end(), tri3.begin(), tri3.end() );
+
+	renderer = new Renderer( scene );
+	noPrim = scene.size();
+	noLight = 1;
 	renderer->setCamera( cam );
 #else
 	Camera cam = Camera( vec3( 0.f, 0.f, -2.f ), vec3( 0.f, 0.f, 0.f ), vec3( 0.f, 1.f, 0.f ), PI / 4, ( (float)SCRWIDTH / (float)SCRHEIGHT ), 0.f, 0.5f, 1.f );
 
 	Material mat;
 	mat.type = MaterialType::LAMBERTIAN_MAT;
-	mat.albedo = vec3( 0.75f, 0.25f, 0.25f );
+	mat.albedo = vec3( 0.75f, 0.75f, 0.25f );
 	mat.emission = vec3( 0.f, 0.f, 0.f );
 
 	vector<Primitive *> scene;
-	//scene = loadOBJ("assets/final/Person.obj", mat);
+	vector<Primitive *> person = loadOBJ( "assets/final/Person.obj", mat );
 
 	// Light
 	mat.albedo = vec3( 1.f, 1.f, 1.f );
@@ -80,23 +83,24 @@ void Game::Init()
 
 	mat.albedo = vec3( 0.25f, 0.75f, 0.25f );
 	mat.emission = vec3( 0.f, 0.f, 0.f );
-	scene.push_back( new Sphere( vec3( -3.f, 0.f, 12.f ), 2.f, mat ) );
+	//scene.push_back( new Sphere( vec3( -3.f, 0.f, 12.f ), 2.f, mat ) );
 
 	mat.albedo = vec3( 0.1f, 0.3f, 0.6f );
 	mat.emission = vec3( 0.f, 0.f, 0.f );
-	scene.push_back( new Sphere( vec3( 4.f, -2.5f, 12.f ), 2.f, mat ) );
+	//scene.push_back( new Sphere( vec3( 4.f, -2.5f, 12.f ), 2.f, mat ) );
 
-	mat.type = MIRROR_MAT;
-	mat.albedo = vec3( 0.75f, 0.75f, 0.25f );
+	mat.type = SPECULAR_MAT;
+	mat.albedo = vec3( 1.f, 1.f, 1.f );
 	mat.emission = vec3( 0.f, 0.f, 0.f );
 	mat.roughness = 0.f;
-	scene.push_back( new Sphere( vec3( 0.f, -1.f, 16.f ), 2.f, mat ) );
+	scene.push_back( new Sphere( vec3( 0.f, 5.f, 15.f ), 2.f, mat ) );
+
+	//scene.insert( scene.end(), person.begin(), person.end() );
 
 	renderer = new Renderer( scene );
 	noPrim = scene.size();
-	noLight = 1; // lights.size();
+	noLight = 1;
 	renderer->setCamera( cam );
-	// renderer->setLights( lights );
 #endif
 }
 
@@ -139,32 +143,32 @@ void Game::Tick( float deltaTime )
 	// Handle input
 	if ( moveLeft )
 	{
-		renderer->moveCam( vec3( -0.1f, 0.f, 0.f ) );
+		renderer->moveCam( vec3( -0.25f, 0.f, 0.f ) );
 	}
 
 	if ( moveRight )
 	{
-		renderer->moveCam( vec3( 0.1f, 0.f, 0.f ) );
+		renderer->moveCam( vec3( 0.25f, 0.f, 0.f ) );
 	}
 
 	if ( moveUp )
 	{
-		renderer->moveCam( vec3( 0.f, -0.1f, 0.f ) );
+		renderer->moveCam( vec3( 0.f, -0.25f, 0.f ) );
 	}
 
 	if ( moveDown )
 	{
-		renderer->moveCam( vec3( 0.f, 0.1f, 0.f ) );
+		renderer->moveCam( vec3( 0.f, 0.25f, 0.f ) );
 	}
 
 	if ( moveForward )
 	{
-		renderer->moveCam( vec3( 0.f, 0.f, 0.1f ) );
+		renderer->moveCam( vec3( 0.f, 0.f, 0.25f ) );
 	}
 
 	if ( moveBackward )
 	{
-		renderer->moveCam( vec3( 0.f, 0.f, -0.1f ) );
+		renderer->moveCam( vec3( 0.f, 0.f, -0.25f ) );
 	}
 
 	if ( rotLeft )

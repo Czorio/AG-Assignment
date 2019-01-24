@@ -19,22 +19,22 @@
 #define USE_SAH
 #define USE_BVH
 #define IMPORTANCE_SAMPLING
-#define RUSSIAN_ROULETTE
+//#define RUSSIAN_ROULETTE
 //#define BVH_DEBUG
 #define BVH_MIN_SAH_COUNT 8
 #define BVHDEPTH 128
 #define BINCOUNT 32 // this can also be reduced for faster construction
 
-#define MAXRAYDEPTH 8
+#define MAXRAYDEPTH 16
 #define SAMPLES 4
 #define ITERATIONS 1024
 
 #define SHADOWBIAS 0.001f
-#define REFLECTIONBIAS 0.01f
+#define REFLECTIONBIAS 0.005f
 #define REFRACTIONBIAS 0.001f
 #define EPSILON 0.0001f
 
-#define FIREFLY 20.f
+#define FIREFLY 10.f
 
 #define AMBIENTLIGHT 0.f
 

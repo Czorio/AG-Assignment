@@ -176,7 +176,7 @@ Ray getReflectedRay( const vec3 &incoming, const vec3 &normal, const vec3 &hitLo
 	Ray r;
 	vec3 outgoing = incoming - 2.f * incoming.dot( normal ) * normal;
 	r.origin = hitLocation + ( REFLECTIONBIAS * outgoing );
-	r.direction = outgoing;
+	r.direction = outgoing.normalized();
 
 	return r;
 }
@@ -244,7 +244,7 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth, bool bvh_debug ) const
 		case RayType::INDIRECT_RAY:
 			return vec3( 0.f, 0.f, 0.f );
 			break;
-		case RayType::MIRROR_RAY:
+		case RayType::SPECULAR_RAY:
 		case RayType::LIGHT_RAY:
 			return closestHit.mat.emission;
 			break;
@@ -271,19 +271,21 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth, bool bvh_debug ) const
 	vec3 Nt, Nb;
 	Sample::createLocalCoordinateSystem( closestHit.normal, Nt, Nb );
 
-	if ( closestHit.mat.type == MIRROR_MAT )
+	if ( closestHit.mat.type == SPECULAR_MAT )
 	{
 		Ray reflected = getReflectedRay( r.direction, closestHit.normal, closestHit.coordinates );
-		reflected.type = MIRROR_RAY;
+		reflected.type = SPECULAR_RAY;
+
 		// For roughness
 		if ( closestHit.mat.roughness > 0.f )
 		{
 			vec3 random = calculateDiffuseRayDir( closestHit.normal, Nt, Nb );
-			vec3 newDir = closestHit.mat.roughness * random + 1 - closestHit.mat.roughness * reflected.direction;
+			vec3 newDir = closestHit.mat.roughness * random + (1 - closestHit.mat.roughness) * reflected.direction;
+			newDir.normalize();
 			reflected.direction = newDir;
 		}
 
-		return closestHit.mat.albedo * shootRay( reflected, depth - 1, false );
+		return closestHit.mat.albedo * shootRay( reflected, depth + 1, false );
 	}
 
 	// Direct illumination calculations
