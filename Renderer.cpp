@@ -211,7 +211,7 @@ vec3 calculateDiffuseRayDir( const vec3 &N, const vec3 &Nt, const vec3 &Nb )
 
 void Renderer::randomPointOnLight( const vec3 &sensorPoint, vec3 &randomPoint, float &randomLightArea, vec3 &lightNormal ) const
 {
-	int randomLight = (int)Rand( lightIndices.size() );
+	int randomLight = lightIndices[( int ) Rand( lightIndices.size() )];
 	randomPoint = primitives[randomLight]->getRandomSurfacePoint( sensorPoint );
 	const float &d = ( randomPoint - sensorPoint ).length();
 	randomLightArea = primitives[randomLight]->getArea( d );

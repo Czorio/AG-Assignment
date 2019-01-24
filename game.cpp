@@ -18,11 +18,7 @@ void Game::Init()
 
 	vector<Primitive *> scene;
 
-	// Light
-	mat.albedo = vec3( 1.f, 1.f, 1.f );
-	mat.emission = vec3( 10.f, 10.f, 10.f );
-	mat.type = MaterialType::EMIT_MAT;
-	scene.push_back( new Sphere( vec3( 0.f, -10.f, 15.f ), 3.f, mat ) );
+
 
 	// Spheres
 	mat.type = MaterialType::LAMBERTIAN_MAT;
@@ -30,9 +26,19 @@ void Game::Init()
 	mat.emission = vec3( 0.f, 0.f, 0.f );
 	scene.push_back( new Sphere( vec3( 0.f, 1e5f - 10.f, 15.f ), 1e5f, mat ) );
 
+	// Light
+	mat.albedo = vec3( 1.f, 1.f, 1.f );
+	mat.emission = vec3( 10.f, 10.f, 10.f );
+	mat.type = MaterialType::EMIT_MAT;
+	scene.push_back( new Sphere( vec3( 0.f, -10.f, 15.f ), 3.f, mat ) );
+
+	mat.type = MaterialType::LAMBERTIAN_MAT;
 	mat.albedo = vec3( 0.75f, 0.25f, 0.25f );
 	mat.emission = vec3( 0.f, 0.f, 0.f );
 	scene.push_back( new Sphere( vec3( 0.f, 1e5f + 5.f, 15.f ), 1e5f, mat ) );
+
+	vector<Primitive *> tri1 = loadOBJ( "assets/Final/Person.obj", mat );
+	scene.insert( scene.end(), tri1.begin(), tri1.end() );
 
 	mat.albedo = vec3( 0.25f, 0.25f, 0.75f );
 	mat.emission = vec3( 0.f, 0.f, 0.f );
