@@ -19,6 +19,7 @@ enum RayType
 {
 	PRIMARY_RAY,
 	LIGHT_RAY,
+	MIRROR_RAY,
 	INDIRECT_RAY
 };
 

@@ -68,7 +68,7 @@ void Renderer::renderFrame( bool bvh_debug )
 
 						if ( color.sqrLentgh() > FIREFLY * FIREFLY )
 						{
-							color *= vec3(1.f / color.length());
+							color *= vec3( 1.f / color.length() );
 						}
 
 						prebuffer[( y + dy ) * SCRWIDTH + ( x + dx )] += color;
@@ -143,10 +143,10 @@ Pixel *Renderer::getOutput() const
 {
 	// currentSample - 1 because it is increased in the renderFrame() function in preparation of the next frame.
 	// Unfortunately, we are getting the current frame, so we get currentSample - 1.
-	float importance = 1.f / float( currentIteration - 1 );
+	float average = 1.f / float( currentIteration - 1 );
 	for ( unsigned i = 0; i < SCRWIDTH * SCRHEIGHT; i++ )
 	{
-		buffer[i] = rgb( gammaCorrect( prebuffer[i] * importance ) );
+		buffer[i] = rgb( gammaCorrect( prebuffer[i] * average ) );
 	}
 
 	return buffer;
@@ -171,15 +171,15 @@ __inline void clampFloat( float &val, float lo, float hi )
 }
 
 // FROM Ray-tracer:
-//Ray getReflectedRay( const vec3 &incoming, const vec3 &normal, const vec3 &hitLocation )
-//{
-//	Ray r;
-//	vec3 outgoing = incoming - 2.f * incoming.dot( normal ) * normal;
-//	r.origin = hitLocation + ( REFLECTIONBIAS * outgoing );
-//	r.direction = outgoing;
-//
-//	return r;
-//}
+Ray getReflectedRay( const vec3 &incoming, const vec3 &normal, const vec3 &hitLocation )
+{
+	Ray r;
+	vec3 outgoing = incoming - 2.f * incoming.dot( normal ) * normal;
+	r.origin = hitLocation + ( REFLECTIONBIAS * outgoing );
+	r.direction = outgoing;
+
+	return r;
+}
 
 vec3 getPointOnHemi()
 {
@@ -230,20 +230,21 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth, bool bvh_debug ) const
 	Hit closestHit = bvh.intersect( r );
 
 	// No hit
-	if ( closestHit.t == FLT_MAX )
+	if ( closestHit.hitType == 0 )
 	{
 		return vec3( 0.f, 0.f, 0.f );
 	}
 
 	// Next Event Estimation
 	// Closest hit is light source
-	if ( closestHit.mat.type == EMIT )
+	if ( closestHit.mat.type == EMIT_MAT )
 	{
 		switch ( r.type )
 		{
 		case RayType::INDIRECT_RAY:
 			return vec3( 0.f, 0.f, 0.f );
 			break;
+		case RayType::MIRROR_RAY:
 		case RayType::LIGHT_RAY:
 			return closestHit.mat.emission;
 			break;
@@ -255,21 +256,35 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth, bool bvh_debug ) const
 	// Closest hit is object/primitive but ray is light ray
 	// Does not work for cases where light source is obstracted by another light source
 	// Currently: does not work for mirrors!
-	if ( closestHit.mat.type != EMIT && r.type == RayType::LIGHT_RAY )
+	if ( closestHit.mat.type != EMIT_MAT && r.type == RayType::LIGHT_RAY )
 		return vec3( 0.f, 0.f, 0.f );
 
-	// Russian Roulette
+		// Russian Roulette
 #ifdef RUSSIAN_ROULETTE
 	float roulette = ( closestHit.mat.albedo.x + closestHit.mat.albedo.y + closestHit.mat.albedo.z ) / 3.f;
-	clampFloat(roulette, 0.1, 0.9);
+	clampFloat( roulette, 0.1, 0.9 );
 	if ( ( r.type == RayType::INDIRECT_RAY ) && ( Rand( 1 ) > roulette ) )
 		return vec3( 0.f, 0.f, 0.f );
 #endif
 
-
 	// Create the local coordinate system of the hit point
 	vec3 Nt, Nb;
 	Sample::createLocalCoordinateSystem( closestHit.normal, Nt, Nb );
+
+	if ( closestHit.mat.type == MIRROR_MAT )
+	{
+		Ray reflected = getReflectedRay( r.direction, closestHit.normal, closestHit.coordinates );
+		reflected.type = MIRROR_RAY;
+		// For roughness
+		if ( closestHit.mat.roughness > 0.f )
+		{
+			vec3 random = calculateDiffuseRayDir( closestHit.normal, Nt, Nb );
+			vec3 newDir = closestHit.mat.roughness * random + 1 - closestHit.mat.roughness * reflected.direction;
+			reflected.direction = newDir;
+		}
+
+		return closestHit.mat.albedo * shootRay( reflected, depth - 1, false );
+	}
 
 	// Direct illumination calculations
 	// Calculate direct ray (aiming to a random light)
@@ -284,12 +299,11 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth, bool bvh_debug ) const
 	L = normalize( L );
 
 	// The following act as the visibility factor
-	float cos_o = dot( -L, lightNormal );	  
-	float cos_i = dot( L, closestHit.normal ); 
+	float cos_o = dot( -L, lightNormal );
+	float cos_i = dot( L, closestHit.normal );
 
 	cos_o = std::max( 0.f, cos_o ); // --> checks for light-ray intersection
 	cos_i = std::max( 0.f, cos_i ); // --> checks for primitive-ray intersection
-
 
 	// Slide 26 ("Variance reduction")
 	// Shoot the direct ray (light ray)
@@ -298,12 +312,11 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth, bool bvh_debug ) const
 	directRay.origin = closestHit.coordinates + REFLECTIONBIAS * directRay.direction;
 	directRay.type = RayType::LIGHT_RAY;
 	vec3 Ld( 0.f, 0.f, 0.f );
-	
+
 	// Using if can save some computations since if one of the two is zero the result is zero
 	// (had 0.3fps improvement with this if)
 	if ( ( cos_i > 0 ) && ( cos_o > 0 ) )
-		Ld = shootRay( directRay, 0 ); // no splitting for light rays, depth=0
-
+		Ld = shootRay( directRay, 0, false ); // no splitting for light rays, depth=0
 
 	// Calculate random diffused ray (cosine weighted or uniform depending if "I.S." on)
 	Ray diffray;
@@ -325,21 +338,20 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth, bool bvh_debug ) const
 	vec3 BRDF = closestHit.mat.albedo * ( 1 / PI );
 
 	vec3 Ei( 0.f, 0.f, 0.f );
-	if (dpro > EPSILON)
+	if ( dpro > EPSILON )
 	{
-		Ei = shootRay( diffray, depth + 1 ) * dpro;
+		Ei = shootRay( diffray, depth + 1, false ) * dpro;
 
 		Ei.x = Ei.x / PDF.x;
 		Ei.y = Ei.y / PDF.y;
 		Ei.z = Ei.z / PDF.z;
 	}
 
-
 	float solidAngle = ( cos_o * randomLightArea ) / ( distance * distance );
 	Ld = Ld * solidAngle * BRDF * cos_i; // NEED TO MULTIPLY BY NUM OF LIGHTS HERE?
 
 #ifdef RUSSIAN_ROULETTE
-	return BRDF * Ei * (1.f/ roulette) + Ld;
+	return BRDF * Ei * ( 1.f / roulette ) + Ld;
 #else
 	return BRDF * Ei + Ld;
 #endif
@@ -389,7 +401,7 @@ void Renderer::report() const
 {
 	vec3 sum = vec3();
 	float average = 1.f / float( currentIteration );
-	for (int i = 0; i < SCRWIDTH * SCRHEIGHT; i++)
+	for ( int i = 0; i < SCRWIDTH * SCRHEIGHT; i++ )
 	{
 		sum += prebuffer[i] * average;
 	}

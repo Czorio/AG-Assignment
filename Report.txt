@@ -1,6 +1,20 @@
 Made by:
 Mathijs de Boer (5686857)
 Konstantinos Ntatsis (6591884)
+-- ASSIGNMENT 3 --
+NOTE:
+Running in Win32 works. x64, however, seems to not play nice with the SAH and Binning.
+
+Passing Grade Requirements:
+We implemented a Path tracer.
+	-	Accumulator
+	-	NEE
+	-	Russian Roulette
+
+
+Additional Points:
+	-	Gamma correction with SIMD
+	-	Depth of Field
 
 -- ASSIGNMENT 2 --
 NOTE:

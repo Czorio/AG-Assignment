@@ -9,10 +9,10 @@ struct Texture
 
 enum MaterialType
 {
-	LAMBERTIAN,
-	DIELECTRIC,
-	MIRROR,
-	EMIT // for lights
+	LAMBERTIAN_MAT,
+	DIELECTRIC_MAT,
+	MIRROR_MAT,
+	EMIT_MAT // for lights
 };
 
 struct Material
@@ -20,6 +20,7 @@ struct Material
 	MaterialType type;
 	vec3 albedo;
 	vec3 emission;
+	float roughness;
 
 	void loadDiffuse( char *filename )
 	{

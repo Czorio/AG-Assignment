@@ -7,7 +7,7 @@
 // Prevent expansion clashes (when using std::min and std::max):
 #define NOMINMAX
 
-#define FINAL
+//#define FINAL
 
 #define MAX_IDLE_FPS 60.f
 
@@ -34,7 +34,7 @@
 #define REFRACTIONBIAS 0.001f
 #define EPSILON 0.0001f
 
-#define FIREFLY 10.f
+#define FIREFLY 20.f
 
 #define AMBIENTLIGHT 0.f
 
