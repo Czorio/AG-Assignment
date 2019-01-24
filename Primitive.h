@@ -142,12 +142,11 @@ struct Sphere : public Primitive
 
 	vec3 getRandomSurfacePoint( const vec3 &sensorPoint ) const override
 	{
+		// This function is only used for the sampling a random point on the light
+		// so no cosine weighted choice even when Importance Sampling on (unlike diffuse rays)
+
 		// Get a random point on hemisphere with unit radius
-#ifdef IMPORTANCE_SAMPLING
-		vec3 unitPoint = Sample::cosineSampleHemisphere( Rand( 1 ), Rand( 1 ) ); // care with the randoms here
-#else
 		vec3 unitPoint = Sample::uniformSampleHemisphere( Rand( 1 ), Rand( 1 ) ); // care with the randoms here
-#endif
 
 		// Transform the point to be on the surface part that is visible by the sensor point
 		// N connects the origin of the sphere and the point we do the calculations for (sensor)
