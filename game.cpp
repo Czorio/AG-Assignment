@@ -51,7 +51,7 @@ void Game::Init()
 	noLight = 1;
 	renderer->setCamera( cam );
 #elif defined MONKEY_SCENE
-	Camera cam = Camera( vec3( 0.f, -0.75f, -5.f ), vec3( 0.f, -0.75f, 0.f ), vec3( 0.f, 1.f, 0.f ), PI / 4, ( (float)SCRWIDTH / (float)SCRHEIGHT ), 0.f, 0.5f, 1.f );
+	Camera cam = Camera( vec3( 0.f, -0.75f, -5.f ), vec3( 0.f, -0.75f, 0.f ), vec3( 0.f, 1.f, 0.f ), PI / 4, ( (float)SCRWIDTH / (float)SCRHEIGHT ), 0.125f, 0.5f, 5.f );
 
 	Material monkeyMat;
 	monkeyMat.type = MaterialType::LAMBERTIAN_MAT;
@@ -106,8 +106,8 @@ void Game::Init()
 	glassMat.attenuation = vec3();
 	glassMat.ior = 1.51f;
 	glassMat.roughness = 0.f;
-	monkeys.push_back( new Sphere( vec3(0.55f, -0.4f, 0.f), 0.25f, glassMat ) );
-	monkeys.push_back( new Sphere( vec3(-0.55f, -0.4f, 0.f), 0.25f, glassMat ) );
+	monkeys.push_back( new Sphere( vec3( 0.55f, -0.4f, 0.f ), 0.25f, glassMat ) );
+	monkeys.push_back( new Sphere( vec3( -0.55f, -0.4f, 0.f ), 0.25f, glassMat ) );
 
 	renderer = new Renderer( monkeys );
 	noPrim = monkeys.size();
@@ -127,7 +127,7 @@ void Game::Init()
 
 	for ( Primitive *p : person )
 	{
-		p->translate(vec3(0.f, 5.f, 15.f));
+		p->translate( vec3( 0.f, 5.f, 15.f ) );
 	}
 
 	// Light

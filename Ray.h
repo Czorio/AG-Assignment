@@ -30,9 +30,9 @@ struct Ray
 	RayType type;
 	// Refraction index of current medium
 	float refractionIndex = 1.f;
-	
+
 	// Ray constructor
-	Ray() : type(PRIMARY_RAY) {}
+	Ray() : type( PRIMARY_RAY ) {}
 
 	vec3 operator()( const float t ) const
 	{

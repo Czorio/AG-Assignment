@@ -23,7 +23,7 @@
 #define BINCOUNT 32 // this can also be reduced for faster construction
 
 #define MAXRAYDEPTH 8
-#define ITERATIONS 1024
+#define ITERATIONS 1024*32
 
 #define SHADOWBIAS 0.001f
 #define REFLECTIONBIAS 0.005f

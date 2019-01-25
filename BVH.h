@@ -289,17 +289,17 @@ struct BVHNode
 					aabb rightBounds = aabb();
 
 					// Divide primitives over splitplane
-					for (Primitive *p : primitives)
+					for ( Primitive *p : primitives )
 					{
 						if ( p->origin[axis] < binSplit )
 						{
 							leftAmount++;
-							leftBounds.Grow(p->volume());
+							leftBounds.Grow( p->volume() );
 						}
 						else
 						{
 							rightAmount++;
-							rightBounds.Grow(p->volume());
+							rightBounds.Grow( p->volume() );
 						}
 					}
 

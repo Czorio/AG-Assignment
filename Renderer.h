@@ -25,7 +25,6 @@ class Renderer
 	Camera cam;
 	vector<Primitive *> primitives;
 	const BVH bvh;
-	//vector<Primitive *> lights; 
 	vector<uint> lightIndices; // for Next Event Estimation
 
 	unsigned currentIteration;
@@ -33,7 +32,6 @@ class Renderer
 	float *depthbuffer;
 	vec3 *postbuffer;
 	Pixel *buffer;
-	bool *boolbuffer; // TEST
 
 	float *kernel;
 

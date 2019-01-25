@@ -305,7 +305,7 @@ struct Triangle : public Primitive
 		vec3 v0v1 = toV1 - toV0;
 		vec3 v0v2 = toV2 - toV0;
 
-		return v0v1.cross(v0v2).length() * 0.5f;
+		return v0v1.cross( v0v2 ).length() * 0.5f;
 	}
 
 	vec3 getNormal( vec3 pointOnSurface ) const override
