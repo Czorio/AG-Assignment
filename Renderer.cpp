@@ -181,6 +181,23 @@ Ray getReflectedRay( const vec3 &incoming, const vec3 &normal, const vec3 &hitLo
 	return r;
 }
 
+vec3 getRefractedDir(const vec3 &incoming, const vec3 &normal, float ior)
+{
+	float cosi = incoming.dot( normal );
+	clampFloat(cosi, -1, 1 );
+	float etai = 1, etat = ior;
+	vec3 n = normal;
+	if ( cosi < 0 ) { cosi = -cosi; }
+	else
+	{
+		std::swap( etai, etat );
+		n = -normal;
+	}
+	float eta = etai / etat;
+	float k = 1 - eta * eta * ( 1 - cosi * cosi );
+	return k < 0 ? 0 : eta * incoming + ( eta * cosi - sqrtf( k ) ) * n;
+}
+
 vec3 getPointOnHemi()
 {
 #ifdef IMPORTANCE_SAMPLING
@@ -211,11 +228,57 @@ vec3 calculateDiffuseRayDir( const vec3 &N, const vec3 &Nt, const vec3 &Nb )
 
 void Renderer::randomPointOnLight( const vec3 &sensorPoint, vec3 &randomPoint, float &randomLightArea, vec3 &lightNormal ) const
 {
-	int randomLight = (int)Rand( lightIndices.size() );
+	int randomLight = lightIndices[(int)Rand( lightIndices.size() )];
 	randomPoint = primitives[randomLight]->getRandomSurfacePoint( sensorPoint );
 	const float &d = ( randomPoint - sensorPoint ).length();
 	randomLightArea = primitives[randomLight]->getArea( d );
 	lightNormal = primitives[randomLight]->getNormal( randomPoint );
+}
+
+// Code adapted from Scratchapixel
+inline void calcFresnel( const vec3 &rayDir, const vec3 &normal, const float &refractiveIndex, float &kr )
+{
+	float cosI = -1 * normal.dot( rayDir );
+	float etaI = 1;
+	float etaT = refractiveIndex;
+	if ( cosI > 0 )
+	{
+		swap( etaI, etaT );
+	}
+
+	float sinT = etaI / etaT * sqrtf( max( 0.f, 1 - cosI * cosI ) );
+
+	if ( sinT >= 1 )
+	{
+		// Total internal reflection
+		kr = 1;
+	}
+	else
+	{
+		float cosT = sqrtf( max( 0.f, 1 - sinT * sinT ) );
+		cosI = fabsf( cosI );
+		float Rs = ( ( etaT * cosI ) - ( etaI * cosT ) ) / ( ( etaT * cosI ) + ( etaI * cosT ) );
+		float Rp = ( ( etaI * cosI ) - ( etaT * cosT ) ) / ( ( etaI * cosI ) + ( etaT * cosT ) );
+
+		kr = ( Rs * Rs + Rp * Rp ) / 2;
+	}
+}
+
+const Tmpl8::vec3 &Renderer::reflect( const Ray &r, Hit &closestHit, Tmpl8::vec3 &Nt, Tmpl8::vec3 &Nb, unsigned int depth ) const
+{
+	Ray reflected = getReflectedRay( r.direction, closestHit.normal, closestHit.coordinates );
+	reflected.type = SPECULAR_RAY;
+
+	// For roughness
+	if ( closestHit.mat.roughness > 0.f )
+	{
+		vec3 random = calculateDiffuseRayDir( closestHit.normal, Nt, Nb );
+		vec3 newDir = closestHit.mat.roughness * random + ( 1 - closestHit.mat.roughness ) * reflected.direction;
+		newDir.normalize();
+		reflected.direction = newDir;
+	}
+
+	return closestHit.mat.albedo * shootRay( reflected, depth + 1, false );
 }
 
 vec3 Renderer::shootRay( const Ray &r, unsigned depth, bool bvh_debug ) const
@@ -273,19 +336,40 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth, bool bvh_debug ) const
 
 	if ( closestHit.mat.type == SPECULAR_MAT )
 	{
-		Ray reflected = getReflectedRay( r.direction, closestHit.normal, closestHit.coordinates );
-		reflected.type = SPECULAR_RAY;
+		return reflect( r, closestHit, Nt, Nb, depth );
+	}
+	else if ( closestHit.mat.type == DIELECTRIC_MAT )
+	{
+		float kr;
+		// Holdover bug from assignment 1, inverting the normal makes the fresnel more accurate
+		calcFresnel( r.direction, -closestHit.normal, closestHit.mat.ior, kr );
 
-		// For roughness
-		if ( closestHit.mat.roughness > 0.f )
+		float random = Rand( 1.f );
+		if ( random < kr )
 		{
-			vec3 random = calculateDiffuseRayDir( closestHit.normal, Nt, Nb );
-			vec3 newDir = closestHit.mat.roughness * random + (1 - closestHit.mat.roughness) * reflected.direction;
-			newDir.normalize();
-			reflected.direction = newDir;
+			return reflect( r, closestHit, Nt, Nb, depth );
 		}
+		else
+		{
+			Ray refracted;
+			// So we can get caustics
+			refracted.type = RayType::SPECULAR_RAY;
+			refracted.direction = getRefractedDir( r.direction, closestHit.normal, closestHit.mat.ior );
+			refracted.origin = closestHit.coordinates + refracted.direction * REFLECTIONBIAS;
 
-		return closestHit.mat.albedo * shootRay( reflected, depth + 1, false );
+			vec3 attenuation = vec3( 1.f );
+			if ( closestHit.hitType == -1 )
+			{
+				refracted.refractionIndex = closestHit.mat.ior;
+
+				// Calculate attenuation of the light through Beer's Law
+				vec3 absorbance = ( vec3( 1.f, 1.f, 1.f ) - closestHit.mat.albedo );
+				attenuation = vec3( expf( absorbance.x * -1.f * closestHit.t ), expf( absorbance.y * -1.f * closestHit.t ), expf( absorbance.z * -1.f * closestHit.t ) );
+			}
+
+			vec3 color = shootRay( refracted, depth + 1, false );
+			return color * attenuation;
+		}
 	}
 
 	// Direct illumination calculations

@@ -38,6 +38,7 @@ class Renderer
 	float *kernel;
 
 	vec3 shootRay( unsigned x, unsigned y, unsigned depth, bool bvh_debug ) const;
+	const Tmpl8::vec3 &reflect( const Ray &r, Hit &closestHit, Tmpl8::vec3 &Nt, Tmpl8::vec3 &Nb, unsigned int depth ) const;
 	vec3 shootRay( const Ray &r, unsigned depth, bool bvh_debug ) const;
 	void randomPointOnLight( const vec3 &sensePoint, vec3 &randomPoint, float &randomLightArea, vec3 &lightNormal ) const;
 

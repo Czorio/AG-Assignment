@@ -89,11 +89,13 @@ void Game::Init()
 	mat.emission = vec3( 0.f, 0.f, 0.f );
 	//scene.push_back( new Sphere( vec3( 4.f, -2.5f, 12.f ), 2.f, mat ) );
 
-	mat.type = SPECULAR_MAT;
+	mat.type = MaterialType::DIELECTRIC_MAT;
 	mat.albedo = vec3( 1.f, 1.f, 1.f );
 	mat.emission = vec3( 0.f, 0.f, 0.f );
 	mat.roughness = 0.f;
-	scene.push_back( new Sphere( vec3( 0.f, 5.f, 15.f ), 2.f, mat ) );
+	mat.ior = 1.51f;
+	mat.attenuation = vec3();
+	scene.push_back( new Sphere( vec3( 0.f, 2.f, 15.f ), 2.f, mat ) );
 
 	//scene.insert( scene.end(), person.begin(), person.end() );
 

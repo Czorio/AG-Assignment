@@ -19,8 +19,13 @@ struct Material
 {
 	MaterialType type;
 	vec3 albedo;
+	// Emissive
 	vec3 emission;
+	// Reflective
 	float roughness;
+	// Dielectric
+	float ior;
+	vec3 attenuation;
 
 	void loadDiffuse( char *filename )
 	{
