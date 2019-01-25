@@ -9,49 +9,8 @@ int noLight;
 // -----------------------------------------------------------
 void Game::Init()
 {
-#ifdef ROOM_SCENE
-	Camera cam = Camera( vec3( 0.f, -0.75f, -5.f ), vec3( 0.f, -0.75f, 0.f ), vec3( 0.f, 1.f, 0.f ), PI / 4, ( (float)SCRWIDTH / (float)SCRHEIGHT ), 0.f, 0.5f, 1.f );
-
-	Material roomMat;
-	roomMat.type = LAMBERTIAN_MAT;
-	roomMat.albedo = vec3( 1.f, 1.f, 1.f );
-
-	Material redMat;
-	redMat.type = LAMBERTIAN_MAT;
-	redMat.albedo = vec3( 1.f, 0.f, 0.f );
-
-	Material greenMat;
-	greenMat.type = LAMBERTIAN_MAT;
-	greenMat.albedo = vec3( 0.f, 1.f, 0.f );
-
-	Material blueMat;
-	blueMat.type = LAMBERTIAN_MAT;
-	blueMat.albedo = vec3( 0.f, 0.f, 1.f );
-
-	vector<Primitive *> scene;
-
-	Material overheadLightMat;
-	overheadLightMat.type = MaterialType::EMIT_MAT;
-	overheadLightMat.albedo = vec3( 1.f, 1.f, 1.f );
-	overheadLightMat.emission = overheadLightMat.albedo * 10.f;
-	scene.push_back( new Sphere( vec3( 0.f, -4.f, 0.f ), 1.f, overheadLightMat ) );
-
-	vector<Primitive *> room = loadOBJ( "assets/final2/Room.obj", roomMat );
-	vector<Primitive *> tri1 = loadOBJ( "assets/final/Tri1.obj", redMat );
-	vector<Primitive *> tri2 = loadOBJ( "assets/final/Tri2.obj", greenMat );
-	vector<Primitive *> tri3 = loadOBJ( "assets/final/Tri3.obj", blueMat );
-
-	scene.insert( scene.end(), room.begin(), room.end() );
-	scene.insert( scene.end(), tri1.begin(), tri1.end() );
-	scene.insert( scene.end(), tri2.begin(), tri2.end() );
-	scene.insert( scene.end(), tri3.begin(), tri3.end() );
-
-	renderer = new Renderer( scene );
-	noPrim = scene.size();
-	noLight = 1;
-	renderer->setCamera( cam );
-#elif defined MONKEY_SCENE
-	Camera cam = Camera( vec3( 0.f, -0.75f, -5.f ), vec3( 0.f, -0.75f, 0.f ), vec3( 0.f, 1.f, 0.f ), PI / 4, ( (float)SCRWIDTH / (float)SCRHEIGHT ), 0.125f, 0.5f, 5.f );
+#if defined MONKEY_SCENE
+	Camera cam = Camera( vec3( 0.f, -0.75f, -3.f ), vec3( 0.f, -0.75f, 0.f ), vec3( 0.f, 1.f, 0.f ), PI / 4, ( (float)SCRWIDTH / (float)SCRHEIGHT ), 0.25f, 0.5f, 3.f );
 
 	Material monkeyMat;
 	monkeyMat.type = MaterialType::LAMBERTIAN_MAT;

@@ -169,78 +169,69 @@ struct BVHNode
 		float side3 = bounds.Extend( 2 );
 
 		// Calculate the cost of the head
-		float splitCost = FLT_MAX;
 		float minCost = primitives.size() * ( side1 * side2 + side2 * side3 + side3 * side1 );
-		float split;
-		float surfaceLeft, surfaceRight;
-		BVHNode *temp_left, *temp_right;
-		vector<Primitive *> primsLeft, primsRight;
 
-		// Loop over the three axis
-		for ( int axis = 0; axis < 3; axis++ )
+		int axis = bounds.LongestAxis();
+
+		vector<Primitive *> left;
+		vector<Primitive *> right;
+		// Loop over all possible splits (primitive centroids)
+		for ( int bin = 1; bin < BINCOUNT; bin++ )
 		{
-			// Loop over all possible splits (primitive centroids)
-			for ( int bin = 1; bin < BINCOUNT; bin++ )
+			vector<Primitive *> primsLeft;
+			vector<Primitive *> primsRight;
+			primsLeft.clear();
+			primsRight.clear();
+
+			float split = bounds.Minimum( axis ) + bounds.Extend( axis ) * bin / BINCOUNT;
+
+			// Count number of primitives in left and right nodes
+			for ( Primitive *prim : primitives )
 			{
-				split = bounds.bmin[axis] + bounds.Extend( axis ) * bin / BINCOUNT;
-				primsLeft.clear();
-				primsRight.clear();
-
-				// Count number of primitives in left and right nodes
-				for ( Primitive *prim : primitives )
+				if ( prim->origin[axis] <= split )
 				{
-					if ( prim->origin[axis] <= split )
-					{
-						primsLeft.push_back( prim );
-					}
-					else
-					{
-						primsRight.push_back( prim );
-					}
+					primsLeft.push_back( prim );
 				}
-
-				int countLeft = primsLeft.size();
-				int countRight = primsRight.size();
-
-				// Avoid useless partionings - need to check
-				// if ( countLeft <= 1 || countRight <= 1 ) continue;
-
-				// Update children
-				temp_left = new BVHNode( primsLeft );
-				temp_right = new BVHNode( primsRight );
-
-				// Calculate sides of the left and right bounding boxes
-				float lside1 = temp_left->bounds.Extend( 0 );
-				float lside2 = temp_left->bounds.Extend( 1 );
-				float lside3 = temp_left->bounds.Extend( 2 );
-
-				float rside1 = temp_right->bounds.Extend( 0 );
-				float rside2 = temp_right->bounds.Extend( 1 );
-				float rside3 = temp_right->bounds.Extend( 2 );
-
-				// Deallocate memory
-				delete temp_left, temp_right;
-				temp_left = nullptr;
-				temp_right = nullptr;
-
-				// Calculate surface area of left and right boxes
-				float surfaceLeft = lside1 * lside2 + lside2 * lside3 + lside3 * lside1;
-				float surfaceRight = rside1 * rside2 + rside2 * rside3 + rside3 * rside1;
-
-				// Calculate cost of split
-				splitCost = surfaceLeft * countLeft + surfaceRight * countRight;
-
-				// Is this split better than the current minimum?
-				if ( splitCost < minCost )
+				else
 				{
-					minCost = splitCost;
-					bestLeftPrims.clear();
-					bestLeftPrims = primsLeft;
-					bestRightPrims.clear();
-					bestRightPrims = primsRight;
+					primsRight.push_back( prim );
 				}
 			}
+
+			int countLeft = primsLeft.size();
+			int countRight = primsRight.size();
+
+			// Update children
+			BVHNode temp_left = BVHNode( primsLeft );
+			BVHNode temp_right = BVHNode( primsRight );
+
+			// Calculate sides of the left and right bounding boxes
+			float lside1 = temp_left.bounds.Extend( 0 );
+			float lside2 = temp_left.bounds.Extend( 1 );
+			float lside3 = temp_left.bounds.Extend( 2 );
+
+			float rside1 = temp_right.bounds.Extend( 0 );
+			float rside2 = temp_right.bounds.Extend( 1 );
+			float rside3 = temp_right.bounds.Extend( 2 );
+
+			// Calculate surface area of left and right boxes
+			float surfaceLeft = lside1 * lside2 + lside2 * lside3 + lside3 * lside1;
+			float surfaceRight = rside1 * rside2 + rside2 * rside3 + rside3 * rside1;
+
+			// Calculate cost of split
+			float splitCost = surfaceLeft * countLeft + surfaceRight * countRight;
+
+			// Is this split better than the current minimum?
+			if ( splitCost < minCost )
+			{
+				minCost = splitCost;
+				left = primsLeft;
+				right = primsRight;
+			}
 		}
+
+		bestLeftPrims = left;
+		bestRightPrims = right;
 	}
 
 	// Based on PBRT book
@@ -270,8 +261,13 @@ struct BVHNode
 		// Else we divide using the SAH with binning
 		else
 		{
+			float side1 = bounds.Extend( 0 );
+			float side2 = bounds.Extend( 1 );
+			float side3 = bounds.Extend( 2 );
+			float bArea = side1 * side2 + side2 * side3 + side3 * side1;
+
 			// Prepare a variable for each axis
-			float cost[] = {primitives.size() * bounds.Area(), primitives.size() * bounds.Area(), primitives.size() * bounds.Area()};
+			float cost[] = {primitives.size() * bArea, primitives.size() * bArea, primitives.size() * bArea};
 			float split[] = {bounds.Extend( 0 ) / 2.f, bounds.Extend( 1 ) / 2.f, bounds.Extend( 2 ) / 2.f};
 
 			//#pragma omp parallel for
@@ -303,13 +299,26 @@ struct BVHNode
 						}
 					}
 
+					// Calculate sides of the left and right bounding boxes
+					float lside1 = leftBounds.Extend( 0 );
+					float lside2 = leftBounds.Extend( 1 );
+					float lside3 = leftBounds.Extend( 2 );
+
+					float rside1 = rightBounds.Extend( 0 );
+					float rside2 = rightBounds.Extend( 1 );
+					float rside3 = rightBounds.Extend( 2 );
+
+					// Calculate surface area of left and right boxes
+					float surfaceLeft = lside1 * lside2 + lside2 * lside3 + lside3 * lside1;
+					float surfaceRight = rside1 * rside2 + rside2 * rside3 + rside3 * rside1;
+
 					// Arbitrary
 					float traverse = 0.125f;
 					float intersect = 1.f;
 
 					// We have enough information to calculate the SAH now
-					float leftCost = ( leftBounds.Area() / bounds.Area() ) * leftAmount * intersect;
-					float rightCost = ( rightBounds.Area() / bounds.Area() ) * rightAmount * intersect;
+					float leftCost = ( surfaceLeft / bArea ) * leftAmount * intersect;
+					float rightCost = ( surfaceRight / bArea ) * rightAmount * intersect;
 					float totalCost = traverse + leftCost + rightCost;
 
 					if ( totalCost < cost[axis] )
