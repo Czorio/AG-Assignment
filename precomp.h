@@ -7,7 +7,8 @@
 // Prevent expansion clashes (when using std::min and std::max):
 #define NOMINMAX
 
-//#define FINAL
+//#define ROOM_SCENE
+#define MONKEY_SCENE
 
 #define MAX_IDLE_FPS 60.f
 
@@ -15,26 +16,19 @@
 #define SCRHEIGHT 512
 #define TILESIZE 64
 
-//#define LINEAR_TRAVERSE
-#define USE_SAH
-#define USE_BVH
 #define IMPORTANCE_SAMPLING
-//#define RUSSIAN_ROULETTE
-//#define BVH_DEBUG
+#define RUSSIAN_ROULETTE
 #define BVH_MIN_SAH_COUNT 8
-#define BVHDEPTH 128
+#define BVHDEPTH 64
 #define BINCOUNT 32 // this can also be reduced for faster construction
 
-#define MAXRAYDEPTH 16
-#define SAMPLES 4
+#define MAXRAYDEPTH 8
 #define ITERATIONS 1024
 
 #define SHADOWBIAS 0.001f
 #define REFLECTIONBIAS 0.005f
 #define REFRACTIONBIAS 0.001f
 #define EPSILON 0.0001f
-
-#define FIREFLY 10.f
 
 #define AMBIENTLIGHT 0.f
 

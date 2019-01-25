@@ -16,8 +16,9 @@ struct Primitive
 	virtual Hit hit( const Ray &ray ) const = 0;
 	virtual aabb volume() const = 0;
 	virtual vec3 getRandomSurfacePoint( const vec3 &sensorPoint ) const = 0; // NEE, to sample point on light
-	virtual float getArea( const float &d ) const = 0;						 // NEE, to sample point on light
-	virtual vec3 getNormal( const vec3 &pointOnSurface ) const = 0;
+	virtual float getArea( const float &d, const vec3 &from ) const = 0;	 // NEE, to sample point on light
+	virtual vec3 getNormal( vec3 pointOnSurface ) const = 0;
+	virtual void translate( const vec3 &vec ) = 0;
 };
 
 struct Sphere : public Primitive
@@ -166,16 +167,21 @@ struct Sphere : public Primitive
 		return surfacePoint;
 	}
 
-	float getArea( const float &d ) const override
+	float getArea( const float &d, const vec3 &from ) const override
 	{
 		// Visible area of sphere from any point (r2 = radius*radius)
 		// Source: https://math.stackexchange.com/questions/1329130/what-fraction-of-a-sphere-can-an-external-observer-see
-		return 2 * PI * r2 * d / (radius + d);
+		return 2 * PI * r2 * d / ( radius + d );
 	}
 
-	vec3 getNormal(const vec3 &pointOnSurface) const override
+	vec3 getNormal( vec3 pointOnSurface ) const override
 	{
-		return normalize( pointOnSurface - origin );
+		return pointOnSurface - origin;
+	}
+
+	void translate( const vec3 &vec ) override
+	{
+		origin += vec;
 	}
 };
 
@@ -275,16 +281,46 @@ struct Triangle : public Primitive
 	// Need to implement this? - Lights made of triangles?
 	vec3 getRandomSurfacePoint( const vec3 &sensorPoint ) const override
 	{
-		return vec3( 0.f, 0.f, 0.f );
+		float r1 = Rand( 1.f );
+		float r2 = Rand( 1.f );
+		if ( r1 + r2 >= 1.f )
+		{
+			r1 = 1 - r1;
+			r2 = 1 - r2;
+		}
+
+		return v0 + r1 * ( v1 - v0 ) + r2 * ( v2 - v0 );
 	}
 
-	float getArea( const float &d ) const override // Next event estimation
+	float getArea( const float &d, const vec3 &from ) const override // Next event estimation
 	{
-		return 0;
+		vec3 toV0 = v0 - from;
+		vec3 toV1 = v1 - from;
+		vec3 toV2 = v2 - from;
+
+		toV0.normalize();
+		toV1.normalize();
+		toV2.normalize();
+
+		vec3 v0v1 = toV1 - toV0;
+		vec3 v0v2 = toV2 - toV0;
+
+		return v0v1.cross(v0v2).length() * 0.5f;
 	}
 
-	vec3 getNormal(const vec3 &pointOnSurface) const override // Next event estimation
+	vec3 getNormal( vec3 pointOnSurface ) const override
 	{
-		return vec3(0.f, 0.f, 0.f);
+		const vec3 &edge_1 = v1 - v0;
+		const vec3 &edge_2 = v2 - v0;
+
+		return edge_1.cross( edge_2 ).normalized();
+	}
+
+	void translate( const vec3 &vec ) override
+	{
+		v0 += vec;
+		v1 += vec;
+		v2 += vec;
+		origin = vec3( ( v0.x + v1.x + v2.x ) / 3, ( v0.y + v1.y + v2.y ) / 3, ( v0.z + v1.z + v2.z ) / 3 );
 	}
 };

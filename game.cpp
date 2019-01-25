@@ -9,7 +9,7 @@ int noLight;
 // -----------------------------------------------------------
 void Game::Init()
 {
-#ifdef FINAL
+#ifdef ROOM_SCENE
 	Camera cam = Camera( vec3( 0.f, -0.75f, -5.f ), vec3( 0.f, -0.75f, 0.f ), vec3( 0.f, 1.f, 0.f ), PI / 4, ( (float)SCRWIDTH / (float)SCRHEIGHT ), 0.f, 0.5f, 1.f );
 
 	Material roomMat;
@@ -50,16 +50,85 @@ void Game::Init()
 	noPrim = scene.size();
 	noLight = 1;
 	renderer->setCamera( cam );
+#elif defined MONKEY_SCENE
+	Camera cam = Camera( vec3( 0.f, -0.75f, -5.f ), vec3( 0.f, -0.75f, 0.f ), vec3( 0.f, 1.f, 0.f ), PI / 4, ( (float)SCRWIDTH / (float)SCRHEIGHT ), 0.f, 0.5f, 1.f );
+
+	Material monkeyMat;
+	monkeyMat.type = MaterialType::LAMBERTIAN_MAT;
+	monkeyMat.albedo = vec3( 0.25f, 0.25f, 0.25f );
+
+	Material eyesRedMat;
+	eyesRedMat.type = MaterialType::EMIT_MAT;
+	eyesRedMat.albedo = vec3( 1.f, 0.05f, 0.05f );
+	eyesRedMat.emission = eyesRedMat.albedo * 100.f;
+
+	Material eyesGreenMat;
+	eyesGreenMat.type = MaterialType::EMIT_MAT;
+	eyesGreenMat.albedo = vec3( 0.05f, 1.f, 0.05f );
+	eyesGreenMat.emission = eyesGreenMat.albedo * 100.f;
+
+	Material eyesBlueMat;
+	eyesBlueMat.type = MaterialType::EMIT_MAT;
+	eyesBlueMat.albedo = vec3( 0.05f, 0.05f, 1.f );
+	eyesBlueMat.emission = eyesBlueMat.albedo * 100.f;
+
+	Material personMat;
+	personMat.type = MaterialType::LAMBERTIAN_MAT;
+	personMat.roughness = 0.f;
+	personMat.albedo = vec3( 1.f, 1.f, 1.f );
+
+	Material cillinderMat;
+	cillinderMat.type = MaterialType::SPECULAR_MAT;
+	cillinderMat.roughness = 0.0f;
+	cillinderMat.albedo = vec3( 0.75f, 0.75f, 0.75f );
+
+	vector<Primitive *> monkeys = loadOBJ( "assets/final/Monkeys.obj", monkeyMat );
+	vector<Primitive *> cillinder = loadOBJ( "assets/final/Cillinder.obj", cillinderMat );
+	vector<Primitive *> redEyes = loadOBJ( "assets/final/MonkeyEyesRed.obj", eyesRedMat );
+	vector<Primitive *> blueEyes = loadOBJ( "assets/final/MonkeyEyesGreen.obj", eyesGreenMat );
+	vector<Primitive *> greenEyes = loadOBJ( "assets/final/MonkeyEyesBlue.obj", eyesBlueMat );
+	vector<Primitive *> person = loadOBJ( "assets/final/Person.obj", personMat );
+
+	monkeys.insert( monkeys.end(), cillinder.begin(), cillinder.end() );
+	monkeys.insert( monkeys.end(), redEyes.begin(), redEyes.end() );
+	monkeys.insert( monkeys.end(), blueEyes.begin(), blueEyes.end() );
+	monkeys.insert( monkeys.end(), greenEyes.begin(), greenEyes.end() );
+	monkeys.insert( monkeys.end(), person.begin(), person.end() );
+
+	Material basePlaneMat;
+	basePlaneMat.type = MaterialType::LAMBERTIAN_MAT;
+	basePlaneMat.albedo = vec3( 0.5f, 0.5f, 0.5f );
+	monkeys.push_back( new Sphere( vec3( 0.f, 2500.f, 0.f ), 2500.f, basePlaneMat ) );
+
+	Material glassMat;
+	glassMat.type = MaterialType::DIELECTRIC_MAT;
+	glassMat.albedo = vec3( 1.f );
+	glassMat.attenuation = vec3();
+	glassMat.ior = 1.51f;
+	glassMat.roughness = 0.f;
+	monkeys.push_back( new Sphere( vec3(0.55f, -0.4f, 0.f), 0.25f, glassMat ) );
+	monkeys.push_back( new Sphere( vec3(-0.55f, -0.4f, 0.f), 0.25f, glassMat ) );
+
+	renderer = new Renderer( monkeys );
+	noPrim = monkeys.size();
+	noLight = 6;
+	renderer->setCamera( cam );
 #else
 	Camera cam = Camera( vec3( 0.f, 0.f, -2.f ), vec3( 0.f, 0.f, 0.f ), vec3( 0.f, 1.f, 0.f ), PI / 4, ( (float)SCRWIDTH / (float)SCRHEIGHT ), 0.f, 0.5f, 1.f );
 
 	Material mat;
-	mat.type = MaterialType::LAMBERTIAN_MAT;
+	mat.type = MaterialType::SPECULAR_MAT;
+	mat.roughness = 0.f;
 	mat.albedo = vec3( 0.75f, 0.75f, 0.25f );
 	mat.emission = vec3( 0.f, 0.f, 0.f );
 
 	vector<Primitive *> scene;
 	vector<Primitive *> person = loadOBJ( "assets/final/Person.obj", mat );
+
+	for ( Primitive *p : person )
+	{
+		p->translate(vec3(0.f, 5.f, 15.f));
+	}
 
 	// Light
 	mat.albedo = vec3( 1.f, 1.f, 1.f );
@@ -83,11 +152,11 @@ void Game::Init()
 
 	mat.albedo = vec3( 0.25f, 0.75f, 0.25f );
 	mat.emission = vec3( 0.f, 0.f, 0.f );
-	//scene.push_back( new Sphere( vec3( -3.f, 0.f, 12.f ), 2.f, mat ) );
+	scene.push_back( new Sphere( vec3( -3.f, 0.f, 12.f ), 2.f, mat ) );
 
 	mat.albedo = vec3( 0.1f, 0.3f, 0.6f );
 	mat.emission = vec3( 0.f, 0.f, 0.f );
-	//scene.push_back( new Sphere( vec3( 4.f, -2.5f, 12.f ), 2.f, mat ) );
+	scene.push_back( new Sphere( vec3( 4.f, -2.5f, 12.f ), 2.f, mat ) );
 
 	mat.type = MaterialType::DIELECTRIC_MAT;
 	mat.albedo = vec3( 1.f, 1.f, 1.f );
@@ -95,9 +164,9 @@ void Game::Init()
 	mat.roughness = 0.f;
 	mat.ior = 1.51f;
 	mat.attenuation = vec3();
-	scene.push_back( new Sphere( vec3( 0.f, 2.f, 15.f ), 2.f, mat ) );
+	//scene.push_back( new Sphere( vec3( 0.f, 2.f, 15.f ), 2.f, mat ) );
 
-	//scene.insert( scene.end(), person.begin(), person.end() );
+	scene.insert( scene.end(), person.begin(), person.end() );
 
 	renderer = new Renderer( scene );
 	noPrim = scene.size();

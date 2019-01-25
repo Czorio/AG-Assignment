@@ -1,5 +1,17 @@
 #include "precomp.h"
 
+__inline void clampFloat( float &val, float lo, float hi )
+{
+	if ( val > hi )
+	{
+		val = hi;
+	}
+	else if ( val < lo )
+	{
+		val = lo;
+	}
+}
+
 Renderer::Renderer( vector<Primitive *> primitives ) : bvh( BVH( primitives ) )
 {
 	currentIteration = 1;
@@ -63,13 +75,12 @@ void Renderer::renderFrame( bool bvh_debug )
 				{
 					if ( ( x + dx ) < SCRWIDTH && ( y + dy ) < SCRHEIGHT )
 					{
-						// Firefly surpression
 						vec3 color = shootRay( x + dx, y + dy, 0, bvh_debug );
 
-						if ( color.sqrLentgh() > FIREFLY * FIREFLY )
-						{
-							color *= vec3( 1.f / color.length() );
-						}
+						// Firefly surpression
+						clampFloat( color.x, 0.f, 1.f );
+						clampFloat( color.y, 0.f, 1.f );
+						clampFloat( color.z, 0.f, 1.f );
 
 						prebuffer[( y + dy ) * SCRWIDTH + ( x + dx )] += color;
 					}
@@ -158,18 +169,6 @@ vec3 Renderer::shootRay( unsigned x, unsigned y, unsigned depth, bool bvh_debug 
 	return shootRay( r, depth, bvh_debug );
 }
 
-__inline void clampFloat( float &val, float lo, float hi )
-{
-	if ( val > hi )
-	{
-		val = hi;
-	}
-	else if ( val < lo )
-	{
-		val = lo;
-	}
-}
-
 // FROM Ray-tracer:
 Ray getReflectedRay( const vec3 &incoming, const vec3 &normal, const vec3 &hitLocation )
 {
@@ -181,10 +180,10 @@ Ray getReflectedRay( const vec3 &incoming, const vec3 &normal, const vec3 &hitLo
 	return r;
 }
 
-vec3 getRefractedDir(const vec3 &incoming, const vec3 &normal, float ior)
+vec3 getRefractedDir( const vec3 &incoming, const vec3 &normal, float ior )
 {
 	float cosi = incoming.dot( normal );
-	clampFloat(cosi, -1, 1 );
+	clampFloat( cosi, -1, 1 );
 	float etai = 1, etat = ior;
 	vec3 n = normal;
 	if ( cosi < 0 ) { cosi = -cosi; }
@@ -231,7 +230,7 @@ void Renderer::randomPointOnLight( const vec3 &sensorPoint, vec3 &randomPoint, f
 	int randomLight = lightIndices[(int)Rand( lightIndices.size() - 1 )];
 	randomPoint = primitives[randomLight]->getRandomSurfacePoint( sensorPoint );
 	const float &d = ( randomPoint - sensorPoint ).length();
-	randomLightArea = primitives[randomLight]->getArea( d );
+	randomLightArea = primitives[randomLight]->getArea( d, sensorPoint );
 	lightNormal = primitives[randomLight]->getNormal( randomPoint );
 }
 
@@ -434,7 +433,7 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth, bool bvh_debug ) const
 	}
 
 	float solidAngle = ( cos_o * randomLightArea ) / ( distance * distance );
-	Ld = Ld * solidAngle * BRDF * cos_i; // NEED TO MULTIPLY BY NUM OF LIGHTS HERE?
+	Ld = Ld * solidAngle * BRDF * cos_i * lightIndices.size(); // NEED TO MULTIPLY BY NUM OF LIGHTS HERE?
 
 #ifdef RUSSIAN_ROULETTE
 	return BRDF * Ei * ( 1.f / roulette ) + Ld;

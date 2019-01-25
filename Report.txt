@@ -7,14 +7,22 @@ Running in Win32 works. x64, however, seems to not play nice with the SAH and Bi
 
 Passing Grade Requirements:
 We implemented a Path tracer.
-	-	Accumulator
-	-	NEE
-	-	Russian Roulette
-
+	-	Accumulator <- Mathijs
+	-	NEE <- Konstantinos
+	-	Russian Roulette <- Konstantinos
+	-	Importance Sampling <- Konstantinos
+	-	Materials
+		-	Emissive <- Konstantinos
+		-	Lambertian <- Konstantinos
+		-	Specular <- Mathijs
+			-	with roughness parameter
+		-	Dielectric <- Mathijs
 
 Additional Points:
-	-	Gamma correction with SIMD
-	-	Depth of Field
+	-	Gamma correction with SIMD <- Mathijs
+	-	Depth of Field <- Mathijs
+	-	Firefly surpression <- Mathijs
+	-	Triangle lights <- Mathijs
 
 -- ASSIGNMENT 2 --
 NOTE:
