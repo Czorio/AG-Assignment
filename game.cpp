@@ -10,7 +10,7 @@ int noLight;
 void Game::Init()
 {
 #if defined MONKEY_SCENE
-	Camera cam = Camera( vec3( 0.f, -0.75f, -3.f ), vec3( 0.f, -0.75f, 0.f ), vec3( 0.f, 1.f, 0.f ), PI / 4, ( (float)SCRWIDTH / (float)SCRHEIGHT ), 0.25f, 0.5f, 3.f );
+	Camera cam = Camera( vec3( 0.f, -0.75f, -3.f ), vec3( 0.f, -0.75f, 0.f ), vec3( 0.f, 1.f, 0.f ), PI / 4, ( (float)SCRWIDTH / (float)SCRHEIGHT ), 0.25f, 0.35f, 3.f );
 
 	Material monkeyMat;
 	monkeyMat.type = MaterialType::LAMBERTIAN_MAT;
@@ -71,6 +71,47 @@ void Game::Init()
 	renderer = new Renderer( monkeys );
 	noPrim = monkeys.size();
 	noLight = 6;
+	renderer->setCamera( cam );
+#elif defined LAMP
+	Camera cam = Camera( vec3( 0.f, -0.75f, -3.f ), vec3( 0.f, -0.75f, 0.f ), vec3( 0.f, 1.f, 0.f ), PI / 4, ( (float)SCRWIDTH / (float)SCRHEIGHT ), 0.f, 0.35f, 3.f );
+
+	Material bulbMat;
+	bulbMat.type = MaterialType::EMIT_MAT;
+	bulbMat.albedo = vec3( 1.f, 1.f, 1.f );
+	bulbMat.emission = bulbMat.albedo * 10.f;
+
+	Material chromeMat;
+	chromeMat.type = MaterialType::SPECULAR_MAT;
+	chromeMat.albedo = vec3( 1.f, 1.f, 1.f );
+	chromeMat.roughness = 0.f;
+
+	Material capMat;
+	capMat.type = MaterialType::LAMBERTIAN_MAT;
+	capMat.albedo = vec3( 0.25f, 0.25f, 0.25f );
+
+	vector<Primitive *> bulb = loadOBJ( "assets/final3/Bulb.obj", bulbMat );
+	vector<Primitive *> inside = loadOBJ( "assets/final3/InsideCap.obj", chromeMat );
+	vector<Primitive *> outside = loadOBJ( "assets/final3/OutsideCap.obj", capMat );
+
+	bulb.insert( bulb.end(), inside.begin(), inside.end() );
+	bulb.insert( bulb.end(), outside.begin(), outside.end() );
+
+	Material basePlaneMat;
+	basePlaneMat.type = MaterialType::LAMBERTIAN_MAT;
+	basePlaneMat.albedo = vec3( 0.5f, 0.5f, 0.5f );
+	bulb.push_back( new Sphere( vec3( 0.f, 2500.f, 0.f ), 2500.f, basePlaneMat ) );
+
+	Material glassMat;
+	glassMat.type = MaterialType::DIELECTRIC_MAT;
+	glassMat.albedo = vec3( 1.f );
+	glassMat.attenuation = vec3();
+	glassMat.ior = 1.51f;
+	glassMat.roughness = 0.f;
+	bulb.push_back( new Sphere( vec3( -1.f, -1.f, -1.f ), 0.75f, glassMat ) );
+
+	renderer = new Renderer( bulb );
+	noPrim = bulb.size();
+	noLight = 1;
 	renderer->setCamera( cam );
 #else
 	Camera cam = Camera( vec3( 0.f, 0.f, -2.f ), vec3( 0.f, 0.f, 0.f ), vec3( 0.f, 1.f, 0.f ), PI / 4, ( (float)SCRWIDTH / (float)SCRHEIGHT ), 0.f, 0.5f, 1.f );

@@ -8,12 +8,15 @@
 #define NOMINMAX
 
 #define MONKEY_SCENE
+// Lamp scene is an example of how bouncing light can be used to build a desk lamp
+// Geometry is a little buggy as the meshes were rushed a little bit.
+//#define LAMP
 
 #define MAX_IDLE_FPS 60.f
 
 #define SCRWIDTH 512
 #define SCRHEIGHT 512
-#define TILESIZE 128
+#define TILESIZE 64
 
 #define IMPORTANCE_SAMPLING
 #define RUSSIAN_ROULETTE
@@ -22,7 +25,7 @@
 #define BINCOUNT 32 // this can also be reduced for faster construction
 
 #define MAXRAYDEPTH 8
-#define ITERATIONS 1024
+#define ITERATIONS 1024 * 8
 
 #define SHADOWBIAS 0.001f
 #define REFLECTIONBIAS 0.005f
