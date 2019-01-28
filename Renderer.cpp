@@ -350,24 +350,29 @@ vec3 Renderer::shootRay( const Ray &r, unsigned depth, bool bvh_debug ) const
 		}
 		else
 		{
-			Ray refracted;
-			// So we can get caustics
-			refracted.type = RayType::SPECULAR_RAY;
-			refracted.direction = getRefractedDir( r.direction, closestHit.normal, closestHit.mat.ior );
-			refracted.origin = closestHit.coordinates + refracted.direction * REFLECTIONBIAS;
-
-			vec3 attenuation = vec3( 1.f );
-			if ( closestHit.hitType == -1 )
+			if ( closestHit.mat.transparent )
 			{
-				refracted.refractionIndex = closestHit.mat.ior;
+				Ray refracted;
+				// So we can get caustics
+				refracted.type = RayType::SPECULAR_RAY;
+				refracted.direction = getRefractedDir( r.direction, closestHit.normal, closestHit.mat.ior );
+				refracted.origin = closestHit.coordinates + refracted.direction * REFLECTIONBIAS;
 
-				// Calculate attenuation of the light through Beer's Law
-				vec3 absorbance = ( vec3( 1.f, 1.f, 1.f ) - closestHit.mat.albedo );
-				attenuation = vec3( expf( absorbance.x * -1.f * closestHit.t ), expf( absorbance.y * -1.f * closestHit.t ), expf( absorbance.z * -1.f * closestHit.t ) );
+				vec3 attenuation = vec3( 1.f );
+				if ( closestHit.hitType == -1 )
+				{
+					refracted.refractionIndex = closestHit.mat.ior;
+
+					// Calculate attenuation of the light through Beer's Law
+					vec3 absorbance = ( vec3( 1.f, 1.f, 1.f ) - closestHit.mat.albedo );
+					attenuation = vec3( expf( absorbance.x * -1.f * closestHit.t ), expf( absorbance.y * -1.f * closestHit.t ), expf( absorbance.z * -1.f * closestHit.t ) );
+				}
+
+				vec3 color = shootRay( refracted, depth + 1, false );
+				return color * attenuation;
 			}
-
-			vec3 color = shootRay( refracted, depth + 1, false );
-			return color * attenuation;
+			// There is no else statement, as moving the diffuse code to its own method seems to introduce bugs and slowdowns
+			// The lack of else statement should make the code continue below
 		}
 	}
 

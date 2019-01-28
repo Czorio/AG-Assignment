@@ -26,6 +26,7 @@ struct Material
 	// Dielectric
 	float ior;
 	vec3 attenuation;
+	bool transparent;
 
 	void loadDiffuse( char *filename )
 	{

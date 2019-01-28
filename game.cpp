@@ -65,8 +65,17 @@ void Game::Init()
 	glassMat.attenuation = vec3();
 	glassMat.ior = 1.51f;
 	glassMat.roughness = 0.f;
+	glassMat.transparent = true;
 	monkeys.push_back( new Sphere( vec3( 0.55f, -0.4f, 0.f ), 0.25f, glassMat ) );
-	monkeys.push_back( new Sphere( vec3( -0.55f, -0.4f, 0.f ), 0.25f, glassMat ) );
+
+	Material plasticMat;
+	plasticMat.type = MaterialType::DIELECTRIC_MAT;
+	plasticMat.albedo = vec3( 1.f );
+	plasticMat.attenuation = vec3();
+	plasticMat.ior = 1.51f;
+	plasticMat.roughness = 0.f;
+	plasticMat.transparent = false;
+	monkeys.push_back( new Sphere( vec3( -0.55f, -0.4f, 0.f ), 0.25f, plasticMat ) );
 
 	renderer = new Renderer( monkeys );
 	noPrim = monkeys.size();
