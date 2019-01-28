@@ -272,9 +272,12 @@ struct Triangle : public Primitive
 	{
 		aabb bounds = aabb();
 		bounds.Reset();
-		bounds.Grow( vec3( v0.x + EPSILON, v0.y + EPSILON, v0.z + EPSILON ) );
-		bounds.Grow( vec3( v1.x + EPSILON, v1.y + EPSILON, v1.z + EPSILON ) );
-		bounds.Grow( vec3( v2.x + EPSILON, v2.y + EPSILON, v2.z + EPSILON ) );
+		bounds.Grow( vec3( v0.x, v0.y, v0.z ) );
+		bounds.Grow( vec3( v1.x, v1.y, v1.z ) );
+		bounds.Grow( vec3( v2.x, v2.y, v2.z ) );
+
+		bounds.Grow( vec3( bounds.Minimum( 0 ) - EPSILON, bounds.Minimum( 1 ) - EPSILON, bounds.Minimum( 2 ) - EPSILON ) );
+		bounds.Grow( vec3( bounds.Maximum( 0 ) + EPSILON, bounds.Maximum( 1 ) + EPSILON, bounds.Maximum( 2 ) + EPSILON ) );
 		return bounds;
 	}
 

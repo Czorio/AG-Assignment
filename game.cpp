@@ -72,7 +72,7 @@ void Game::Init()
 	plasticMat.type = MaterialType::DIELECTRIC_MAT;
 	plasticMat.albedo = vec3( 1.f );
 	plasticMat.attenuation = vec3();
-	plasticMat.ior = 1.51f;
+	plasticMat.ior = 2.417f;
 	plasticMat.roughness = 0.f;
 	plasticMat.transparent = false;
 	monkeys.push_back( new Sphere( vec3( -0.55f, -0.4f, 0.f ), 0.25f, plasticMat ) );
@@ -173,7 +173,7 @@ void Game::Init()
 	mat.roughness = 0.f;
 	mat.ior = 1.51f;
 	mat.attenuation = vec3();
-	//scene.push_back( new Sphere( vec3( 0.f, 2.f, 15.f ), 2.f, mat ) );
+	scene.push_back( new Sphere( vec3( 0.f, 2.f, 15.f ), 2.f, mat ) );
 
 	scene.insert( scene.end(), person.begin(), person.end() );
 
